@@ -59,9 +59,9 @@ export default function AboutPage() {
           </p>
           <p>
             InstantReply AI Agent helps solve that tension. Instead of replacing the agent,
-            it gives the agent a clearer, more informed starting point. That means less
-            time staring at a blank reply, less rework, and more energy spent on the issues
-            that actually need a human touch.
+            it gives the agent a clearer, more informed starting point. That means less time
+            staring at a blank reply, less rework, and more energy spent on the issues that
+            actually need a human touch.
           </p>
         </section>
 
@@ -92,8 +92,8 @@ export default function AboutPage() {
             <article style={cardStyle}>
               <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Enhance the stack you already use.</h3>
               <p style={{ marginBottom: 0 }}>
-                Rather than forcing teams into a new support system, we fit into the tools
-                and workflows they already rely on, including Zendesk and Intercom.
+                Rather than forcing teams into a new support system, we fit into the tools and
+                workflows they already rely on, including Zendesk and Intercom.
               </p>
             </article>
             <article style={cardStyle}>
@@ -126,21 +126,21 @@ export default function AboutPage() {
           <h2>Built on trust, not inflated promises</h2>
           <p>
             Support conversations can carry sensitive customer information, and that requires
-            thoughtful handling. That is why the product is built around transparency,
-            human review, and clear operational control. We believe AI should make teams
-            faster without making them less accountable.
+            thoughtful handling. That is why the product is built around transparency, human
+            review, and clear operational control. We believe AI should make teams faster
+            without making them less accountable.
           </p>
           <p>
-            The goal is simple: deliver a more useful reply, reduce repetitive work, and
-            give support teams a tool they can trust in everyday execution.
+            The goal is simple: deliver a more useful reply, reduce repetitive work, and give
+            support teams a tool they can trust in everyday execution.
           </p>
         </section>
 
         <section style={{ ...sectionStyle, ...cardStyle }}>
           <h2 style={{ marginTop: 0 }}>Make every reply a stronger starting point.</h2>
           <p>
-            See how InstantReply AI Agent fits into your support workflow and helps your
-            team respond with more speed, more clarity, and more confidence.
+            See how InstantReply AI Agent fits into your support workflow and helps your team
+            respond with more speed, more clarity, and more confidence.
           </p>
           <a
             href="https://calendly.com"

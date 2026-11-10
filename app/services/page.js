@@ -1,7 +1,7 @@
 export const metadata = {
   title: "Services | InstantReply AI Agent",
   description:
-    "Explore how InstantReply AI Agent helps support teams reduce repetitive response work, improve response speed, and maintain human oversight across key support channels.",
+    "Explore how InstantReply AI Agent helps support teams reduce repetitive reply work, improve response speed, and maintain human oversight across key support channels.",
 };
 
 const sectionStyle = { marginTop: "3rem" };
@@ -59,8 +59,8 @@ export default function ServicesPage() {
             <article style={cardStyle}>
               <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>AI Reply Drafting</h3>
               <p style={{ marginBottom: 0 }}>
-                Turn incoming customer conversations into high-quality, context-aware reply
-                drafts so agents can respond faster with less blank-page friction.
+                Turn incoming customer conversations into context-aware reply drafts so agents
+                can respond faster with less blank-page friction.
               </p>
             </article>
             <article style={cardStyle}>
@@ -93,15 +93,15 @@ export default function ServicesPage() {
             <div style={cardStyle}>
               <strong>1. Capture the customer context</strong>
               <p style={{ marginBottom: 0 }}>
-                InstantReply looks at the current conversation and relevant support history to
+                InstantReply looks at the active conversation and relevant support history to
                 understand what the customer needs.
               </p>
             </div>
             <div style={cardStyle}>
               <strong>2. Draft a useful reply</strong>
               <p style={{ marginBottom: 0 }}>
-                The system prepares a clear, brand-aware response that reflects the context and
-                the support workflow behind it.
+                The system prepares a clear, brand-aware response that reflects the support
+                workflow and the customer&apos;s situation.
               </p>
             </div>
             <div style={cardStyle}>
@@ -138,7 +138,7 @@ export default function ServicesPage() {
           <h2 style={{ marginTop: 0 }}>Ready to reduce response time without losing control?</h2>
           <p>
             See how InstantReply AI Agent can fit into your support workflow and help your
-            team reply faster with better context.
+            team respond faster with better context.
           </p>
           <a
             href="https://calendly.com"

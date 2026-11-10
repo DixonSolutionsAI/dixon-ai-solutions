@@ -11,7 +11,7 @@ export const metadata = {
   openGraph: {
     title: "InstantReply AI Agent",
     description:
-      "Context-aware AI agent for enterprise support teams that drafts replies in under 30 seconds across email, chat, Slack, and WhatsApp.",
+      "Context-aware AI agent for enterprise support teams that drafts replies across email, chat, Slack, and WhatsApp while keeping humans in control.",
     type: "website",
   },
 };

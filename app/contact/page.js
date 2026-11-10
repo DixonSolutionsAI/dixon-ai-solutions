@@ -43,9 +43,9 @@ export default function ContactPage() {
         </h1>
 
         <p style={{ fontSize: "1.15rem", color: "#dfe7f5", maxWidth: "760px" }}>
-          Whether you want to reduce repetitive reply work, improve response speed, or
-          test a human-controlled AI workflow for your support team, we&apos;d be glad to
-          talk through your goals.
+          Whether you want to reduce repetitive reply work, improve response speed, or test a
+          human-controlled AI workflow for your support team, we&apos;d be glad to talk through
+          your goals.
         </p>
 
         <section style={{ ...sectionStyle, ...cardStyle }}>
