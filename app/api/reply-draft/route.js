@@ -69,7 +69,7 @@ export async function POST(request) {
             "Use only facts explicitly provided in the supplied support details. Never invent order status, policies, refunds, delivery dates, account changes, or completed actions.",
             "If information needed to answer is missing or uncertain, write a brief empathetic reply asking for clarification or saying a human agent will verify it. Do not guess.",
             "Keep the customer-facing reply clear, concise, and empathetic. Do not include internal analysis in the reply.",
-            'Return only a JSON object with exactly these string keys: "reply" (the customer-facing draft) and "reviewNote" (a concise note to the agent identifying facts or policies that must be checked; say "Check the draft against the conversation and applicable policy before sending." when no specific gap is apparent).',
+            'Return only a JSON object with exactly these string keys: "reply" (the customer-facing draft) and "reviewNote" (a concise note to the agent identifying facts or policies that must be verified before sending).',
           ].join(" "),
         },
         {
@@ -97,8 +97,21 @@ export async function POST(request) {
 
     return NextResponse.json({ reply: draft.reply.trim(), reviewNote: draft.reviewNote.trim() });
   } catch (error) {
-    // Avoid logging request content, credentials, or provider error details.
-    console.error("Reply draft request failed.", error instanceof Error ? error.name : "UnknownError");
+    const safeError = error && typeof error === "object" ? error : { message: String(error) };
+    const status = typeof safeError.status === "number" ? safeError.status : undefined;
+    const code = typeof safeError.code === "string" || typeof safeError.code === "number" ? safeError.code : undefined;
+    const type = typeof safeError.type === "string" ? safeError.type : undefined;
+    const name = typeof safeError.name === "string" ? safeError.name : "UnknownError";
+    const message = typeof safeError.message === "string" ? safeError.message : "Unknown error";
+
+    console.error("Reply draft request failed.", {
+      errorName: name,
+      errorType: type,
+      errorCode: code,
+      status,
+      message,
+    });
+
     return NextResponse.json({ error: "The draft service could not complete the request. Please try again later." }, { status: 502 });
   }
 }
