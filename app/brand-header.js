@@ -45,9 +45,15 @@ export default function BrandHeader() {
             <path d="M22 25h21M22 33h14" fill="none" stroke="#082f49" strokeLinecap="round" strokeWidth="4" />
             <path d="m39 36 8 6-8 6" fill="none" stroke="#7dd3fc" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
           </svg>
-          <span>InstantReply <span style={{ color: "#7dd3fc" }}>AI Agent</span></span>
+          <span>
+            InstantReply <span style={{ color: "#7dd3fc" }}>AI Agent</span>
+          </span>
         </a>
-        <nav aria-label="Main navigation" style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
+
+        <nav
+          aria-label="Main navigation"
+          style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap" }}
+        >
           {links.map((link) => (
             <a
               key={link.href}

@@ -5,7 +5,7 @@ import { track } from "@vercel/analytics";
 
 export default function AnalyticsEvents() {
   useEffect(() => {
-    function handleClick(event) {
+    const handleClick = (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
 
@@ -18,11 +18,7 @@ export default function AnalyticsEvents() {
       if (url.hostname === "calendly.com" || url.hostname.endsWith(".calendly.com")) {
         track("demo_click", { path });
       }
-
-      if (url.hash === "#pricing") {
-        track("pricing_click", { path });
-      }
-    }
+    };
 
     document.addEventListener("click", handleClick, true);
     return () => document.removeEventListener("click", handleClick, true);
