@@ -1,7 +1,7 @@
 export const metadata = {
   title: "About InstantReply AI Agent | Human-Controlled Support AI",
   description:
-    "Discover InstantReply AI Agent's focused approach to faster customer support: context-aware reply drafts, human oversight, and workflows designed around your existing support operation.",
+    "InstantReply AI Agent helps support teams reduce repetitive reply work with context-aware drafts, human review, and workflows designed for real customer conversations.",
 };
 
 const sectionStyle = { marginTop: "3rem" };
@@ -43,31 +43,30 @@ export default function AboutPage() {
         </h1>
 
         <p style={{ fontSize: "1.15rem", color: "#dfe7f5", maxWidth: "820px" }}>
-          InstantReply AI Agent is built around a simple idea: make the next good
-          response easier for your team to send. It drafts context-aware replies so
-          support professionals can spend less time starting from scratch and more
-          time solving the customer&apos;s actual problem.
+          InstantReply AI Agent was built for one purpose: to make the next customer reply
+          easier to write, easier to send, and easier to trust. It gives support teams a
+          context-aware draft based on the conversation, the customer history, and the
+          workflow in front of them—so the team can move faster without losing judgment.
         </p>
 
         <section style={sectionStyle}>
-          <h2>Not another black-box chatbot</h2>
+          <h2>Why support teams need a better starting point</h2>
           <p>
-            Many customer-support platforms now offer AI for chat, self-service,
-            automation, analytics, and agent assistance. InstantReply takes a more
-            focused point of view: start with the moment an agent needs to respond.
-            Bring the conversation context together, prepare a useful draft, and keep
-            the team in control of what gets sent.
+            The modern support queue is crowded with repetitive requests, repeated context
+            gathering, and pressure to respond quickly without sacrificing quality. Teams
+            are expected to be fast, helpful, and consistent across every channel—while
+            still handling the conversations that require nuanced judgment.
           </p>
           <p>
-            The goal is not to replace your support operation or force customers into
-            a bot-first experience. It is to help your existing team move through
-            repetitive replies faster while preserving human judgment for nuanced,
-            sensitive, or unusual requests.
+            InstantReply AI Agent helps solve that tension. Instead of replacing the agent,
+            it gives the agent a clearer, more informed starting point. That means less
+            time staring at a blank reply, less rework, and more energy spent on the issues
+            that actually need a human touch.
           </p>
         </section>
 
         <section style={sectionStyle}>
-          <h2>What makes our approach different</h2>
+          <h2>Built for real support work</h2>
           <div
             style={{
               display: "grid",
@@ -79,67 +78,69 @@ export default function AboutPage() {
             <article style={cardStyle}>
               <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Draft first. Human decides.</h3>
               <p style={{ marginBottom: 0 }}>
-                AI should accelerate the work, not silently take over the customer
-                relationship. Keep review and approval part of the workflow wherever
-                your team needs it.
+                AI should accelerate the work, not take it out of the team&apos;s hands. Every
+                workflow keeps review and approval in the loop wherever your team needs it.
               </p>
             </article>
             <article style={cardStyle}>
               <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Context before cleverness.</h3>
               <p style={{ marginBottom: 0 }}>
-                A fast answer is only useful when it reflects the conversation. The
-                product is centered on using relevant customer and ticket history to
-                help shape a more informed draft.
+                A fast answer is only useful if it reflects the situation. InstantReply uses
+                customer history and conversation context to help shape a more informed draft.
               </p>
             </article>
             <article style={cardStyle}>
-              <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Enhance the stack you have.</h3>
+              <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Enhance the stack you already use.</h3>
               <p style={{ marginBottom: 0 }}>
-                Rather than asking teams to rebuild support around a new chatbot,
-                InstantReply is positioned as an agent-assist layer for existing
-                workflows, including Zendesk and Intercom.
+                Rather than forcing teams into a new support system, we fit into the tools
+                and workflows they already rely on, including Zendesk and Intercom.
               </p>
             </article>
             <article style={cardStyle}>
-              <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Outcomes over AI hype.</h3>
+              <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Outcomes over hype.</h3>
               <p style={{ marginBottom: 0 }}>
-                We believe performance should be measured against your team&apos;s real
-                baseline: response time, resolution quality, customer experience, and
-                the amount of rework—not vague claims about AI.
+                We measure value by the real outcomes support teams care about: response time,
+                consistency, customer experience, and the amount of repetitive work removed.
               </p>
             </article>
           </div>
         </section>
 
         <section style={sectionStyle}>
-          <h2>Designed for real support work</h2>
+          <h2>Not another black-box chatbot</h2>
           <p>
-            Teams handle conversations across email, live chat, Slack, and WhatsApp.
-            InstantReply&apos;s product direction is to help agents bring the right context
-            into those moments, prepare a clear reply, and retain control over the final
-            message. For routine requests, that can mean less repetitive drafting. For
-            complex issues, it means giving people a better starting point—not pretending
-            that every situation should be automated.
+            Many customer support tools offer AI as a broad suite of features, but a lot of
+            that value is disconnected from the actual work happening in the inbox. The
+            strongest AI for support is the kind that helps a real team work faster without
+            creating confusion, friction, or a loss of trust.
+          </p>
+          <p>
+            InstantReply is built with that reality in mind. It is not designed to replace
+            the support team with a bot-first experience. It is designed to help your team
+            move more efficiently, handle high-volume conversations more consistently, and
+            stay focused on the moments that require real human judgment.
           </p>
         </section>
 
         <section style={sectionStyle}>
           <h2>Built on trust, not inflated promises</h2>
           <p>
-            Support conversations can contain sensitive information, and customers
-            deserve thoughtful handling. Our standard is to be clear about what the AI
-            does, give teams control over how it is used, and prove results with
-            transparent measurements. Specific performance, privacy, security, and
-            compliance commitments should be backed by product evidence before they are
-            promised.
+            Support conversations can carry sensitive customer information, and that requires
+            thoughtful handling. That is why the product is built around transparency,
+            human review, and clear operational control. We believe AI should make teams
+            faster without making them less accountable.
+          </p>
+          <p>
+            The goal is simple: deliver a more useful reply, reduce repetitive work, and
+            give support teams a tool they can trust in everyday execution.
           </p>
         </section>
 
         <section style={{ ...sectionStyle, ...cardStyle }}>
-          <h2 style={{ marginTop: 0 }}>Make every reply a better starting point.</h2>
+          <h2 style={{ marginTop: 0 }}>Make every reply a stronger starting point.</h2>
           <p>
-            See whether a context-aware, human-controlled reply workflow fits your
-            support team.
+            See how InstantReply AI Agent fits into your support workflow and helps your
+            team respond with more speed, more clarity, and more confidence.
           </p>
           <a
             href="https://calendly.com"
