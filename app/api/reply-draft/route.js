@@ -1,13 +1,26 @@
-import { NextResponse } from "next/server";
-import OpenAI from "openai";
-
-export const runtime = "nodejs";
-export const maxDuration = 30;
+const { NextResponse } = require("next/server");
+const OpenAI = require("openai");
+const {
+  getPilotRuntimeStatus,
+  getRateLimitResponse,
+  parseDraftRequest,
+} = require("../../../lib/pilot-config");
 
 const MAX_BODY_BYTES = 16_000;
 
-export async function POST(request) {
+async function POST(request) {
   try {
+    const rateLimit = getRateLimitResponse(request);
+    if (rateLimit.blocked) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfter) },
+        }
+      );
+    }
+
     const contentLength = Number(request.headers.get("content-length") || 0);
     if (contentLength > MAX_BODY_BYTES) {
       return NextResponse.json({ error: "The request is too large." }, { status: 413 });
@@ -20,9 +33,9 @@ export async function POST(request) {
 
     let body;
     try {
-      body = JSON.parse(rawBody);
-    } catch {
-      return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
+      body = parseDraftRequest(rawBody);
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: error.status || 400 });
     }
 
     const { accessCode, message, supportContext = "" } = body || {};
@@ -36,22 +49,17 @@ export async function POST(request) {
       return NextResponse.json({ error: "The message or support details exceed the allowed length." }, { status: 413 });
     }
 
-    const configuredAccessCode = process.env.PILOT_ACCESS_CODE;
-    if (!configuredAccessCode) {
+    const runtimeStatus = getPilotRuntimeStatus();
+    if (!runtimeStatus.ready) {
       return NextResponse.json(
         { error: "The private pilot is not configured yet. Ask the owner to finish setup." },
         { status: 503 }
       );
     }
+
+    const configuredAccessCode = process.env.PILOT_ACCESS_CODE;
     if (accessCode !== configuredAccessCode) {
       return NextResponse.json({ error: "That pilot access code is not valid." }, { status: 401 });
-    }
-
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json(
-        { error: "The AI service is not configured yet. The pilot owner must add its API key in Vercel settings." },
-        { status: 503 }
-      );
     }
 
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -69,7 +77,7 @@ export async function POST(request) {
             "Use only facts explicitly provided in the supplied support details. Never invent order status, policies, refunds, delivery dates, account changes, or completed actions.",
             "If information needed to answer is missing or uncertain, write a brief empathetic reply asking for clarification or saying a human agent will verify it. Do not guess.",
             "Keep the customer-facing reply clear, concise, and empathetic. Do not include internal analysis in the reply.",
-            'Return only a JSON object with exactly these string keys: "reply" (the customer-facing draft) and "reviewNote" (a concise note to the agent identifying facts or policies that must be checked; say "Check the draft against the conversation and applicable policy before sending." when no specific gap is apparent).',
+            'Return only a JSON object with exactly these string keys: "reply" (the customer-facing draft) and "reviewNote" (a concise note to the agent identifying facts or policies that must be double-checked or clarified before sending).',
           ].join(" "),
         },
         {
@@ -97,8 +105,9 @@ export async function POST(request) {
 
     return NextResponse.json({ reply: draft.reply.trim(), reviewNote: draft.reviewNote.trim() });
   } catch (error) {
-    // Avoid logging request content, credentials, or provider error details.
     console.error("Reply draft request failed.", error instanceof Error ? error.name : "UnknownError");
     return NextResponse.json({ error: "The draft service could not complete the request. Please try again later." }, { status: 502 });
   }
 }
+
+module.exports = { POST };
