@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import draftMock from "../../../lib/draft-mock.js";
+
+const { createMockDraft } = draftMock;
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -47,6 +50,11 @@ export async function POST(request) {
       return NextResponse.json({ error: "That pilot access code is not valid." }, { status: 401 });
     }
 
+    // Explicitly opt into a fixed, labeled mock response for safe development without API usage.
+    if (process.env.DRAFT_PROVIDER === "mock") {
+      return NextResponse.json({ ...createMockDraft(), mode: "mock" });
+    }
+
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         { error: "The AI service is not configured yet. The pilot owner must add its API key in Vercel settings." },
@@ -54,7 +62,7 @@ export async function POST(request) {
       );
     }
 
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 10_000, maxRetries: 0 });
     const completion = await client.chat.completions.create({
       model: process.env.OPENAI_MODEL || "gpt-4o-mini",
       temperature: 0.2,
@@ -69,7 +77,7 @@ export async function POST(request) {
             "Use only facts explicitly provided in the supplied support details. Never invent order status, policies, refunds, delivery dates, account changes, or completed actions.",
             "If information needed to answer is missing or uncertain, write a brief empathetic reply asking for clarification or saying a human agent will verify it. Do not guess.",
             "Keep the customer-facing reply clear, concise, and empathetic. Do not include internal analysis in the reply.",
-            'Return only a JSON object with exactly these string keys: "reply" (the customer-facing draft) and "reviewNote" (a concise note to the agent identifying facts or policies that must be verified before sending).',
+            'Return only a JSON object with exactly these string keys: "reply" (the customer-facing draft) and "reviewNote" (a concise note to the agent identifying facts or policies that must be double-checked or clarified before sending).',
           ].join(" "),
         },
         {
@@ -95,21 +103,14 @@ export async function POST(request) {
       return NextResponse.json({ error: "The draft was incomplete. Please try again." }, { status: 502 });
     }
 
-    return NextResponse.json({ reply: draft.reply.trim(), reviewNote: draft.reviewNote.trim() });
+    return NextResponse.json({ reply: draft.reply.trim(), reviewNote: draft.reviewNote.trim(), mode: "live" });
   } catch (error) {
-    const safeError = error && typeof error === "object" ? error : { message: String(error) };
-    const status = typeof safeError.status === "number" ? safeError.status : undefined;
-    const code = typeof safeError.code === "string" || typeof safeError.code === "number" ? safeError.code : undefined;
-    const type = typeof safeError.type === "string" ? safeError.type : undefined;
-    const name = typeof safeError.name === "string" ? safeError.name : "UnknownError";
-    const message = typeof safeError.message === "string" ? safeError.message : "Unknown error";
-
+    // Never log provider messages: they can contain credentials or customer-provided content.
+    const safeError = error && typeof error === "object" ? error : {};
     console.error("Reply draft request failed.", {
-      errorName: name,
-      errorType: type,
-      errorCode: code,
-      status,
-      message,
+      errorName: typeof safeError.name === "string" ? safeError.name : "UnknownError",
+      errorType: typeof safeError.type === "string" ? safeError.type : undefined,
+      status: typeof safeError.status === "number" ? safeError.status : undefined,
     });
 
     return NextResponse.json({ error: "The draft service could not complete the request. Please try again later." }, { status: 502 });
