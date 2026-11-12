@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const fieldStyle = {
   width: "100%",
@@ -31,6 +31,22 @@ const draftActions = [
   { id: "populate_client_profile", label: "Populate Client Profile" },
 ];
 
+const documentKeys = {
+  policy: "instantreply-policy",
+  guidelines: "instantreply-guidelines",
+};
+
+function getDocuments() {
+  try {
+    return {
+      companyPolicy: localStorage.getItem(documentKeys.policy) || "",
+      companyGuidelines: localStorage.getItem(documentKeys.guidelines) || "",
+    };
+  } catch {
+    throw new Error("Cannot access browser document storage. Enable site storage and try again.");
+  }
+}
+
 export default function Home() {
   const [accessCode, setAccessCode] = useState("");
   const [message, setMessage] = useState("");
@@ -43,13 +59,27 @@ export default function Home() {
   const [currentAction, setCurrentAction] = useState("generate");
   const [pendingAction, setPendingAction] = useState("");
   const [accepted, setAccepted] = useState(false);
-  const [ownerPassword, setOwnerPassword] = useState("");
   const [documentBusy, setDocumentBusy] = useState(false);
   const [documentMessage, setDocumentMessage] = useState("");
   const [documentError, setDocumentError] = useState("");
-  const [documentNotice, setDocumentNotice] = useState("");
+  const [documentStatus, setDocumentStatus] = useState(null);
   const policyFile = useRef(null);
   const guidelinesFile = useRef(null);
+
+  useEffect(() => {
+    function refreshDocuments() {
+      try {
+        const documents = getDocuments();
+        setDocumentStatus({ policy: Boolean(documents.companyPolicy), guidelines: Boolean(documents.companyGuidelines) });
+        setDocumentError("");
+      } catch (storageError) {
+        setDocumentError(storageError.message);
+      }
+    }
+    refreshDocuments();
+    window.addEventListener("storage", refreshDocuments);
+    return () => window.removeEventListener("storage", refreshDocuments);
+  }, []);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -62,7 +92,7 @@ export default function Home() {
       const response = await fetch("/api/reply-draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessCode, message, supportContext }),
+        body: JSON.stringify({ accessCode, message, supportContext, ...getDocuments() }),
       });
       const data = await response.json();
 
@@ -73,7 +103,6 @@ export default function Home() {
       setReply(data.reply);
       setReviewNote(data.reviewNote);
       setCurrentAction("generate");
-      setDocumentNotice(data.documentNotice || "");
     } catch (requestError) {
       setError(requestError.message || "Something went wrong. Please try again.");
     } finally {
@@ -98,6 +127,7 @@ export default function Home() {
           supportContext,
           action,
           currentDraft: reply,
+          ...getDocuments(),
         }),
       });
       const data = await response.json();
@@ -109,7 +139,6 @@ export default function Home() {
       setReply(data.reply);
       setReviewNote(data.reviewNote);
       setCurrentAction(action);
-      setDocumentNotice(data.documentNotice || "");
     } catch (requestError) {
       setError(requestError.message || "Something went wrong. Please try again.");
     } finally {
@@ -133,10 +162,6 @@ export default function Home() {
     if (!file) return;
     setDocumentMessage("");
     setDocumentError("");
-    if (!ownerPassword) {
-      setDocumentError("Enter the owner password before uploading.");
-      return;
-    }
     if (!file.name.toLowerCase().endsWith(".txt") || file.size > 16000) {
       setDocumentError("Choose a UTF-8 .txt file of at most 16,000 bytes.");
       return;
@@ -145,39 +170,29 @@ export default function Home() {
     setDocumentBusy(true);
     try {
       const content = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer());
-      const response = await fetch("/api/company-documents", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, operation: "upload", ownerPassword, content }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Unable to upload the document.");
-      setDocumentMessage(`${data.message} New drafts will use it.`);
+      if (!content.trim() || content.includes("\0")) throw new Error("Choose a non-empty UTF-8 text file.");
+      try {
+        localStorage.setItem(documentKeys[kind], content);
+      } catch {
+        throw new Error("Unable to save the document in this browser. Check site storage and available space.");
+      }
+      setDocumentStatus((previous) => ({ ...previous, [kind]: true }));
+      setDocumentMessage(`${kind === "policy" ? "Policy" : "Guidelines"} saved in this browser. New drafts will use it.`);
     } catch (requestError) {
       setDocumentError(requestError.message || "Unable to upload the document.");
     } finally {
-      setOwnerPassword("");
       setDocumentBusy(false);
     }
   }
 
-  async function downloadDocument(kind) {
+  function downloadDocument(kind) {
     setDocumentMessage("");
     setDocumentError("");
-    if (!accessCode.trim()) {
-      setDocumentError("Enter the pilot access code below before downloading.");
-      return;
-    }
-    setDocumentBusy(true);
     try {
-      const response = await fetch("/api/company-documents", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, operation: "download", accessCode }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Unable to download the document.");
-      const url = URL.createObjectURL(new Blob([data.content], { type: "text/plain;charset=utf-8" }));
+      const documents = getDocuments();
+      const content = kind === "policy" ? documents.companyPolicy : documents.companyGuidelines;
+      if (!content) throw new Error(`No ${kind} has been uploaded in this browser.`);
+      const url = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
       const link = document.createElement("a");
       link.href = url;
       link.download = `${kind}.txt`;
@@ -186,8 +201,6 @@ export default function Home() {
       setDocumentMessage(`${kind === "policy" ? "Policy" : "Guidelines"} downloaded.`);
     } catch (requestError) {
       setDocumentError(requestError.message || "Unable to download the document.");
-    } finally {
-      setDocumentBusy(false);
     }
   }
 
@@ -216,14 +229,14 @@ export default function Home() {
           <h2 id="actions-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Response actions</h2>
           <p>Enter your access code and a customer message to generate a response. Review it before using the other actions.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-            <button type="submit" form="draft-form" disabled={loading || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
+            <button type="submit" form="draft-form" disabled={loading || documentBusy || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", cursor: loading || documentBusy ? "wait" : "pointer", fontWeight: 700 }}>
               {loading && !pendingAction ? "Preparing draft…" : "Generate New Response"}
             </button>
             <button type="button" onClick={() => setAccepted(true)} disabled={loading || accepted || !reply.trim()} aria-pressed={accepted} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>
               {accepted ? "Accepted" : "Accept/Approve"}
             </button>
             {draftActions.map(({ id, label }) => (
-              <button key={id} type="button" onClick={() => applyDraftAction(id)} disabled={loading || !reply.trim()} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
+              <button key={id} type="button" onClick={() => applyDraftAction(id)} disabled={loading || documentBusy || !reply.trim()} style={{ ...fieldStyle, width: "auto", cursor: loading || documentBusy ? "wait" : "pointer", fontWeight: 700 }}>
                 {pendingAction === id ? "Working…" : label}
               </button>
             ))}
@@ -236,17 +249,14 @@ export default function Home() {
 
         <section aria-labelledby="documents-heading" style={{ ...cardStyle, margin: "1.5rem 0" }}>
           <h2 id="documents-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Company documents</h2>
-          <p>Upload replaces the shared document. Use UTF-8 .txt files, up to 16,000 bytes each. Downloads require the pilot access code below.</p>
-          <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700, marginBottom: "1rem" }}>
-            Owner password for uploads
-            <input type="password" value={ownerPassword} onChange={(event) => setOwnerPassword(event.target.value)} autoComplete="off" maxLength={256} style={fieldStyle} />
-          </label>
+          <p>Upload UTF-8 .txt files, up to 16,000 bytes each. Files are stored only in this browser, not shared with other users or devices. Anyone using this browser can read or replace them; clearing site data removes them. Document text is sent to OpenAI when generating a response.</p>
+          {documentStatus ? <p>Policy: {documentStatus.policy ? "uploaded" : "not uploaded"} · Guidelines: {documentStatus.guidelines ? "uploaded" : "not uploaded"}</p> : null}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
             <input ref={policyFile} type="file" accept=".txt,text/plain" hidden onChange={(event) => uploadDocument("policy", event)} />
-            <button type="button" disabled={documentBusy} onClick={() => policyFile.current.click()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Upload Policy</button>
+            <button type="button" disabled={documentBusy || loading} onClick={() => policyFile.current.click()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Upload Policy</button>
             <button type="button" disabled={documentBusy} onClick={() => downloadDocument("policy")} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Download Policy</button>
             <input ref={guidelinesFile} type="file" accept=".txt,text/plain" hidden onChange={(event) => uploadDocument("guidelines", event)} />
-            <button type="button" disabled={documentBusy} onClick={() => guidelinesFile.current.click()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Upload Guidelines</button>
+            <button type="button" disabled={documentBusy || loading} onClick={() => guidelinesFile.current.click()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Upload Guidelines</button>
             <button type="button" disabled={documentBusy} onClick={() => downloadDocument("guidelines")} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Download Guidelines</button>
           </div>
           {documentBusy ? <p role="status">Processing document...</p> : null}
@@ -335,7 +345,6 @@ export default function Home() {
                 <strong>Agent review check:</strong> {reviewNote}
               </div>
             ) : null}
-            {documentNotice ? <p role="status" style={{ color: "#fef3c7" }}>{documentNotice}</p> : null}
             <p style={{ color: "#fef3c7", marginBottom: "1rem" }}>
               Human review is required. Verify every factual statement and policy detail; drafts are not sent or saved.
             </p>

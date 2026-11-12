@@ -5,9 +5,7 @@ const {
   getRateLimitResponse,
   parseDraftRequest,
 } = require("../../../lib/pilot-config");
-const { isConfigured, readDocument } = require("../../../lib/company-documents");
-
-const MAX_BODY_BYTES = 24_000;
+const MAX_BODY_BYTES = 320_000;
 const ACTION_INSTRUCTIONS = {
   apply_policy: "Revise the current draft to follow only the confirmed policy details supplied. Do not invent policy. If required policy details are missing, say what the human agent must verify.",
   rewrite: "Rewrite the current draft for clarity while preserving its intent and all supported facts.",
@@ -48,7 +46,7 @@ async function POST(request) {
       return NextResponse.json({ error: error.message }, { status: error.status || 400 });
     }
 
-    const { accessCode, message, supportContext = "", action, currentDraft = "" } = body || {};
+    const { accessCode, message, supportContext = "", action, currentDraft = "", companyPolicy, companyGuidelines } = body;
     if (typeof accessCode !== "string" || !accessCode.trim() || accessCode.length > 256) {
       return NextResponse.json({ error: "Enter a valid pilot access code." }, { status: 401 });
     }
@@ -70,20 +68,6 @@ async function POST(request) {
     const configuredAccessCode = process.env.PILOT_ACCESS_CODE;
     if (accessCode !== configuredAccessCode) {
       return NextResponse.json({ error: "That pilot access code is not valid." }, { status: 401 });
-    }
-
-    let companyPolicy = "";
-    let companyGuidelines = "";
-    let documentNotice = "";
-    try {
-      if (isConfigured()) {
-        [companyPolicy, companyGuidelines] = await Promise.all([readDocument("policy"), readDocument("guidelines")]);
-      } else {
-        documentNotice = "Company documents are not configured; this draft uses only the details entered above.";
-      }
-    } catch (error) {
-      console.error("Company document loading failed.", error instanceof Error ? error.message : "UnknownError");
-      return NextResponse.json({ error: "Unable to load company documents. Ask the owner to check the storage configuration." }, { status: 503 });
     }
 
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -134,7 +118,7 @@ async function POST(request) {
       return NextResponse.json({ error: "The draft was incomplete. Please try again." }, { status: 502 });
     }
 
-    return NextResponse.json({ reply: draft.reply.trim(), reviewNote: draft.reviewNote.trim(), documentNotice });
+    return NextResponse.json({ reply: draft.reply.trim(), reviewNote: draft.reviewNote.trim() });
   } catch (error) {
     console.error("Reply draft request failed.", error instanceof Error ? error.name : "UnknownError");
     return NextResponse.json({ error: "The draft service could not complete the request. Please try again later." }, { status: 502 });
