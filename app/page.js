@@ -25,9 +25,9 @@ const draftActions = [
   { id: "apply_policy", label: "Apply Policy" },
   { id: "rewrite", label: "Re-Write" },
   { id: "more_direct", label: "More Direct" },
-  { id: "email_structure", label: "Email Structure" },
-  { id: "text_message", label: "Text Message" },
-  { id: "call_prompts", label: "Call Prompts" },
+  { id: "email_structure", label: "Email Response" },
+  { id: "text_message", label: "Text Response" },
+  { id: "call_prompts", label: "Call Response" },
   { id: "populate_client_profile", label: "Populate Client Profile" },
 ];
 
@@ -55,10 +55,7 @@ export default function Home() {
     event.preventDefault();
     setLoading(true);
     setError("");
-    setReply("");
-    setReviewNote("");
     setCopied(false);
-    setCurrentAction("generate");
     setAccepted(false);
 
     try {
@@ -75,6 +72,7 @@ export default function Home() {
 
       setReply(data.reply);
       setReviewNote(data.reviewNote);
+      setCurrentAction("generate");
       setDocumentNotice(data.documentNotice || "");
     } catch (requestError) {
       setError(requestError.message || "Something went wrong. Please try again.");
@@ -214,6 +212,28 @@ export default function Home() {
           Create a support reply draft using the customer message and any policy or order details you provide. The assistant must flag missing information; a person reviews and edits every draft.
         </p>
 
+        <section aria-labelledby="actions-heading" style={{ ...cardStyle, margin: "1.5rem 0" }}>
+          <h2 id="actions-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Response actions</h2>
+          <p>Enter your access code and a customer message to generate a response. Review it before using the other actions.</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+            <button type="submit" form="draft-form" disabled={loading || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
+              {loading && !pendingAction ? "Preparing draft…" : "Generate New Response"}
+            </button>
+            <button type="button" onClick={() => setAccepted(true)} disabled={loading || accepted || !reply.trim()} aria-pressed={accepted} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>
+              {accepted ? "Accepted" : "Accept/Approve"}
+            </button>
+            {draftActions.map(({ id, label }) => (
+              <button key={id} type="button" onClick={() => applyDraftAction(id)} disabled={loading || !reply.trim()} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
+                {pendingAction === id ? "Working…" : label}
+              </button>
+            ))}
+            <button type="button" onClick={copyDraft} disabled={loading || !reply.trim()} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
+              {copied ? "Copied" : "Copy draft"}
+            </button>
+          </div>
+          <p style={{ color: "#cbd5e1", marginBottom: 0 }}>Accept/Approve marks the draft for this session only; it does not send or save it.</p>
+        </section>
+
         <section aria-labelledby="documents-heading" style={{ ...cardStyle, margin: "1.5rem 0" }}>
           <h2 id="documents-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Company documents</h2>
           <p>Upload replaces the shared document. Use UTF-8 .txt files, up to 16,000 bytes each. Downloads require the pilot access code below.</p>
@@ -238,7 +258,7 @@ export default function Home() {
           <strong>Prototype safety:</strong> Use fictional or redacted examples only. Do not enter real customer personal, payment, health, or account information. Drafts are not sent or saved by this page, and they must be checked before use.
         </aside>
 
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.1rem" }}>
+        <form id="draft-form" onSubmit={handleSubmit} style={{ display: "grid", gap: "1.1rem" }}>
           <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
             Pilot access code
             <input
@@ -278,23 +298,6 @@ export default function Home() {
             />
           </label>
 
-          <button
-            type="submit"
-            disabled={loading || !message.trim() || !accessCode.trim()}
-            style={{
-              width: "fit-content",
-              background: "#38bdf8",
-              color: "#082f49",
-              border: 0,
-              borderRadius: "999px",
-              padding: "0.9rem 1.4rem",
-              fontWeight: 700,
-              cursor: loading ? "wait" : "pointer",
-              opacity: loading || !message.trim() || !accessCode.trim() ? 0.65 : 1,
-            }}
-          >
-            {loading ? "Preparing draft…" : "Generate reply draft"}
-          </button>
         </form>
 
         {error ? (
@@ -336,36 +339,6 @@ export default function Home() {
             <p style={{ color: "#fef3c7", marginBottom: "1rem" }}>
               Human review is required. Verify every factual statement and policy detail; drafts are not sent or saved.
             </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-              <button
-                type="button"
-                onClick={() => setAccepted(true)}
-                disabled={loading || accepted}
-                aria-pressed={accepted}
-                style={{ ...fieldStyle, width: "auto", cursor: accepted ? "default" : "pointer", fontWeight: 700 }}
-              >
-                {accepted ? "Accepted" : "Accept"}
-              </button>
-              {draftActions.map(({ id, label }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => applyDraftAction(id)}
-                  disabled={loading}
-                  style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}
-                >
-                  {pendingAction === id ? "Working…" : label}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={copyDraft}
-                disabled={loading}
-                style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}
-              >
-                {copied ? "Copied" : "Copy draft"}
-              </button>
-            </div>
           </section>
         ) : null}
       </div>
