@@ -39,6 +39,26 @@ test("parseDraftRequest validates required fields and lengths", () => {
   );
 });
 
+test("parseDraftRequest validates draft actions and requires a draft for transformations", () => {
+  const actionRequest = parseDraftRequest(JSON.stringify({
+    accessCode: "abc123",
+    message: "hello",
+    action: "more_direct",
+    currentDraft: "Thanks for reaching out.",
+  }));
+  assert.equal(actionRequest.action, "more_direct");
+  assert.equal(actionRequest.currentDraft, "Thanks for reaching out.");
+
+  assert.throws(
+    () => parseDraftRequest(JSON.stringify({ accessCode: "abc123", message: "hello", action: "send_reply" })),
+    /Choose a valid draft action/i
+  );
+  assert.throws(
+    () => parseDraftRequest(JSON.stringify({ accessCode: "abc123", message: "hello", action: "rewrite" })),
+    /Generate a draft before applying an action/i
+  );
+});
+
 test("getRateLimitResponse blocks after threshold is reached", () => {
   const request = {
     headers: {
@@ -58,4 +78,32 @@ test("getRateLimitResponse blocks after threshold is reached", () => {
 
   const blocked = getRateLimitResponse(request);
   assert.equal(blocked.blocked, true);
+});
+
+test("getRateLimitResponse allows requests again after the rate-limit window expires", () => {
+  const originalNow = Date.now;
+  let now = 1_000_000;
+  Date.now = () => now;
+
+  const request = {
+    headers: {
+      get(name) {
+        if (name === "x-forwarded-for") return "198.51.100.27";
+        return null;
+      },
+    },
+  };
+
+  try {
+    for (let i = 0; i < 20; i += 1) {
+      assert.equal(getRateLimitResponse(request).blocked, false);
+    }
+
+    assert.equal(getRateLimitResponse(request).blocked, true);
+
+    now += 60_001;
+    assert.deepEqual(getRateLimitResponse(request), { blocked: false, retryAfter: 0 });
+  } finally {
+    Date.now = originalNow;
+  }
 });

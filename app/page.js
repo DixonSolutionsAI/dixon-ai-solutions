@@ -21,6 +21,16 @@ const cardStyle = {
   padding: "1.25rem",
 };
 
+const draftActions = [
+  { id: "apply_policy", label: "Apply Policy" },
+  { id: "rewrite", label: "Re-Write" },
+  { id: "more_direct", label: "More Direct" },
+  { id: "email_structure", label: "Email Structure" },
+  { id: "text_message", label: "Text Message" },
+  { id: "call_prompts", label: "Call Prompts" },
+  { id: "populate_client_profile", label: "Populate Client Profile" },
+];
+
 export default function Home() {
   const [accessCode, setAccessCode] = useState("");
   const [message, setMessage] = useState("");
@@ -30,6 +40,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [currentAction, setCurrentAction] = useState("generate");
+  const [pendingAction, setPendingAction] = useState("");
+  const [accepted, setAccepted] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -38,6 +51,8 @@ export default function Home() {
     setReply("");
     setReviewNote("");
     setCopied(false);
+    setCurrentAction("generate");
+    setAccepted(false);
 
     try {
       const response = await fetch("/api/reply-draft", {
@@ -57,6 +72,42 @@ export default function Home() {
       setError(requestError.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function applyDraftAction(action) {
+    setLoading(true);
+    setPendingAction(action);
+    setError("");
+    setCopied(false);
+    setAccepted(false);
+
+    try {
+      const response = await fetch("/api/reply-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accessCode,
+          message,
+          supportContext,
+          action,
+          currentDraft: reply,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to update the draft.");
+      }
+
+      setReply(data.reply);
+      setReviewNote(data.reviewNote);
+      setCurrentAction(action);
+    } catch (requestError) {
+      setError(requestError.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+      setPendingAction("");
     }
   }
 
@@ -161,10 +212,27 @@ export default function Home() {
 
         {reply ? (
           <section aria-labelledby="draft-heading" style={{ ...cardStyle, marginTop: "2rem" }}>
-            <h2 id="draft-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Suggested reply — edit before use</h2>
+            <h2 id="draft-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>
+              {currentAction === "populate_client_profile"
+                ? "Editable client profile draft"
+                : currentAction === "call_prompts"
+                  ? "Call prompts for agent"
+                  : currentAction === "generate"
+                    ? "Suggested reply — edit before use"
+                    : "Updated draft — edit before use"}
+            </h2>
             <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
-              Editable draft
-              <textarea value={reply} onChange={(event) => setReply(event.target.value)} rows={7} style={fieldStyle} />
+              {currentAction === "populate_client_profile" ? "Profile details" : "Editable draft"}
+              <textarea
+                value={reply}
+                onChange={(event) => {
+                  setReply(event.target.value);
+                  setAccepted(false);
+                  setCopied(false);
+                }}
+                rows={7}
+                style={fieldStyle}
+              />
             </label>
             {reviewNote ? (
               <div style={{ marginTop: "1rem", padding: "1rem", background: "#172554", borderRadius: "12px", color: "#dbeafe" }}>
@@ -172,11 +240,38 @@ export default function Home() {
               </div>
             ) : null}
             <p style={{ color: "#fef3c7", marginBottom: "1rem" }}>
-              Human review is required. Verify every factual statement and policy detail; this prototype does not send replies.
+              Human review is required. Verify every factual statement and policy detail; this prototype does not send or save anything.
             </p>
-            <button type="button" onClick={copyDraft} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>
-              {copied ? "Copied" : "Copy draft"}
-            </button>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+              <button
+                type="button"
+                onClick={() => setAccepted(true)}
+                disabled={loading || accepted}
+                aria-pressed={accepted}
+                style={{ ...fieldStyle, width: "auto", cursor: accepted ? "default" : "pointer", fontWeight: 700 }}
+              >
+                {accepted ? "Accepted" : "Accept"}
+              </button>
+              {draftActions.map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => applyDraftAction(id)}
+                  disabled={loading}
+                  style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}
+                >
+                  {pendingAction === id ? "Working…" : label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={copyDraft}
+                disabled={loading}
+                style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}
+              >
+                {copied ? "Copied" : "Copy draft"}
+              </button>
+            </div>
           </section>
         ) : null}
       </div>
