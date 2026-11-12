@@ -46,12 +46,15 @@ test("draft generation and actions send browser documents to the model", async (
   assert.equal((await POST(makeRequest(body))).status, 200);
   assert.equal((await POST(makeRequest({ ...body, action: "apply_policy", currentDraft: "Draft" }))).status, 200);
   assert.equal((await POST(makeRequest({ ...body, action: "email_structure", currentDraft: "Draft" }))).status, 200);
+  assert.equal((await POST(makeRequest({ ...body, currentDraft: "My edited draft" }))).status, 200);
   for (const prompt of prompts) {
     const data = JSON.parse(prompt.messages[1].content);
     assert.equal(data.companyPolicy, body.companyPolicy);
     assert.equal(data.companyGuidelines, body.companyGuidelines);
   }
   assert.match(prompts[2].messages[0].content, /Do not include a subject line, recipient fields, or signature/);
+  assert.equal(JSON.parse(prompts[3].messages[1].content).currentDraft, "My edited draft");
+  assert.match(prompts[3].messages[0].content, /consider the agent's edits/);
   assert.equal((await POST(makeRequest({ ...body, companyPolicy: "x".repeat(16001) }))).status, 413);
-  assert.equal(prompts.length, 3);
+  assert.equal(prompts.length, 4);
 });

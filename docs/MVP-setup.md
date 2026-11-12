@@ -14,7 +14,7 @@ Redeploy the Preview deployment after setting variables. Do not enable the AI ke
 
 ## Policy and guidelines in this browser
 
-Use the home page controls to upload one policy and one guidelines file as non-empty UTF-8 `.txt` files of at most 16,000 bytes each. Uploading replaces the corresponding file. Download retrieves the current copy from this browser. No Google Drive setup or owner password is required.
+Use the Company Documents navigation tab to upload one policy and one guidelines file as non-empty UTF-8 `.txt` files of at most 16,000 bytes each. Uploading replaces the corresponding file. Download retrieves the current copy from this browser. No Google Drive setup or owner password is required.
 
 The files are stored in browser site storage, not shared across browsers or devices. Anyone with access to this browser or its site data can read, replace, or download them; clearing site data removes them. Each draft and action sends their contents to the server and OpenAI. Use fictional or redacted content only, review provider retention, and do not upload confidential or sensitive documents. If site storage is blocked, drafting reports an error instead of silently omitting saved documents.
 
@@ -27,6 +27,7 @@ The email editor provides To, Cc, Subject, body, and signature fields for manual
 - Accepts one customer message.
 - Optionally uses the policy and guidelines uploaded in the current browser.
 - Produces an editable reply draft and a review note.
+- Shows regenerated responses separately so the edited draft stays unchanged until the agent chooses a suggestion.
 - Instructs the model to avoid guessing and to ask a clarifying question when needed.
 - Requires human verification and does not send or persist the generated draft in the application.
 

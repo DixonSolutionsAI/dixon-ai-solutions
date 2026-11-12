@@ -3,6 +3,7 @@ const links = [
   { href: "/about", label: "About" },
   { href: "/services", label: "Services" },
   { href: "/contact", label: "Contact" },
+  { href: "/company-documents", label: "Company Documents" },
 ];
 
 export default function BrandHeader() {

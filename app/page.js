@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { getDocuments } from "./browser-documents";
 
 const fieldStyle = {
   width: "100%",
@@ -22,30 +23,10 @@ const cardStyle = {
 };
 
 const draftActions = [
-  { id: "apply_policy", label: "Apply Policy" },
-  { id: "rewrite", label: "Re-Write" },
-  { id: "more_direct", label: "More Direct" },
   { id: "email_structure", label: "Email Response" },
   { id: "text_message", label: "Text Response" },
   { id: "call_prompts", label: "Call Response" },
-  { id: "populate_client_profile", label: "Populate Client Profile" },
 ];
-
-const documentKeys = {
-  policy: "instantreply-policy",
-  guidelines: "instantreply-guidelines",
-};
-
-function getDocuments() {
-  try {
-    return {
-      companyPolicy: localStorage.getItem(documentKeys.policy) || "",
-      companyGuidelines: localStorage.getItem(documentKeys.guidelines) || "",
-    };
-  } catch {
-    throw new Error("Cannot access browser document storage. Enable site storage and try again.");
-  }
-}
 
 export default function Home() {
   const [accessCode, setAccessCode] = useState("");
@@ -60,16 +41,11 @@ export default function Home() {
   const [accepted, setAccepted] = useState(false);
   const [activePanel, setActivePanel] = useState("generate");
   const [hasDraft, setHasDraft] = useState(false);
+  const [suggestion, setSuggestion] = useState(null);
   const [emailTo, setEmailTo] = useState("");
   const [emailCc, setEmailCc] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailSignature, setEmailSignature] = useState("");
-  const [documentBusy, setDocumentBusy] = useState(false);
-  const [documentMessage, setDocumentMessage] = useState("");
-  const [documentError, setDocumentError] = useState("");
-  const [documentStatus, setDocumentStatus] = useState(null);
-  const policyFile = useRef(null);
-  const guidelinesFile = useRef(null);
   const panelRef = useRef(null);
 
   useEffect(() => {
@@ -77,21 +53,6 @@ export default function Home() {
       panelRef.current.focus();
     }
   }, [activePanel]);
-
-  useEffect(() => {
-    function refreshDocuments() {
-      try {
-        const documents = getDocuments();
-        setDocumentStatus({ policy: Boolean(documents.companyPolicy), guidelines: Boolean(documents.companyGuidelines) });
-        setDocumentError("");
-      } catch (storageError) {
-        setDocumentError(storageError.message);
-      }
-    }
-    refreshDocuments();
-    window.addEventListener("storage", refreshDocuments);
-    return () => window.removeEventListener("storage", refreshDocuments);
-  }, []);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -104,7 +65,7 @@ export default function Home() {
       const response = await fetch("/api/reply-draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessCode, message, ...getDocuments() }),
+        body: JSON.stringify({ accessCode, message, currentDraft: reply, ...getDocuments() }),
       });
       const data = await response.json();
 
@@ -112,10 +73,15 @@ export default function Home() {
         throw new Error(data.error || "Unable to generate a draft.");
       }
 
-      setReply(data.reply);
-      setReviewNote(data.reviewNote);
-      setHasDraft(true);
-      setCurrentAction("generate");
+      if (reply.trim()) {
+        setSuggestion({ reply: data.reply, reviewNote: data.reviewNote });
+      } else {
+        setReply(data.reply);
+        setReviewNote(data.reviewNote);
+        setHasDraft(true);
+        setCurrentAction("generate");
+        setSuggestion(null);
+      }
     } catch (requestError) {
       setError(requestError.message || "Something went wrong. Please try again.");
     } finally {
@@ -171,54 +137,6 @@ export default function Home() {
     }
   }
 
-  async function uploadDocument(kind, event) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    setDocumentMessage("");
-    setDocumentError("");
-    if (!file.name.toLowerCase().endsWith(".txt") || file.size > 16000) {
-      setDocumentError("Choose a UTF-8 .txt file of at most 16,000 bytes.");
-      return;
-    }
-
-    setDocumentBusy(true);
-    try {
-      const content = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer());
-      if (!content.trim() || content.includes("\0")) throw new Error("Choose a non-empty UTF-8 text file.");
-      try {
-        localStorage.setItem(documentKeys[kind], content);
-      } catch {
-        throw new Error("Unable to save the document in this browser. Check site storage and available space.");
-      }
-      setDocumentStatus((previous) => ({ ...previous, [kind]: true }));
-      setDocumentMessage(`${kind === "policy" ? "Policy" : "Guidelines"} saved in this browser. New drafts will use it.`);
-    } catch (requestError) {
-      setDocumentError(requestError.message || "Unable to upload the document.");
-    } finally {
-      setDocumentBusy(false);
-    }
-  }
-
-  function downloadDocument(kind) {
-    setDocumentMessage("");
-    setDocumentError("");
-    try {
-      const documents = getDocuments();
-      const content = kind === "policy" ? documents.companyPolicy : documents.companyGuidelines;
-      if (!content) throw new Error(`No ${kind} has been uploaded in this browser.`);
-      const url = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${kind}.txt`;
-      link.click();
-      URL.revokeObjectURL(url);
-      setDocumentMessage(`${kind === "policy" ? "Policy" : "Guidelines"} downloaded.`);
-    } catch (requestError) {
-      setDocumentError(requestError.message || "Unable to download the document.");
-    }
-  }
-
   return (
     <main
       style={{
@@ -234,19 +152,16 @@ export default function Home() {
           InstantReply · private pilot prototype
         </p>
         <h1 style={{ fontSize: "clamp(2.2rem, 5vw, 3.8rem)", lineHeight: 1.1, marginBottom: "0.8rem" }}>
-          A useful first draft. Your agent makes the call.
+          Confidentiality and your information
         </h1>
         <p style={{ color: "#cbd5e1", fontSize: "1.05rem", lineHeight: 1.6, maxWidth: "760px" }}>
-          Create a support reply draft using the customer message and any uploaded policy or guidelines. The assistant must flag missing information; a person reviews and edits every draft.
+          This pilot sends your inquiry, draft, and uploaded documents to OpenAI to generate responses. Uploaded documents stay in this browser, where anyone using it can access them. Confidentiality cannot be guaranteed; use fictional or redacted information only.
         </p>
 
         <section aria-labelledby="actions-heading" style={{ ...cardStyle, margin: "1.5rem 0" }}>
           <h2 id="actions-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Response actions</h2>
           <p>Enter your access code and a customer message to generate a response. Review it before using the other actions.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-            <button type="submit" form="draft-form" disabled={loading || documentBusy || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", cursor: loading || documentBusy ? "wait" : "pointer", fontWeight: 700 }}>
-              {loading && !pendingAction ? "Preparing draft…" : "Generate New Response"}
-            </button>
             <button type="button" onClick={() => { setActivePanel("approve"); setCopied(false); }} disabled={loading} aria-pressed={activePanel === "approve"} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>
               Accept/Approve
             </button>
@@ -260,23 +175,6 @@ export default function Home() {
             </button>
           </div>
           <p style={{ color: "#cbd5e1", marginBottom: 0 }}>Choose an action to open its editor. Accept/Approve marks the draft for this session only; it does not send or save it.</p>
-        </section>
-
-        <section aria-labelledby="documents-heading" style={{ ...cardStyle, margin: "1.5rem 0" }}>
-          <h2 id="documents-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Company documents</h2>
-          <p>Upload UTF-8 .txt files, up to 16,000 bytes each. Files are stored only in this browser, not shared with other users or devices. Anyone using this browser can read or replace them; clearing site data removes them. Document text is sent to OpenAI when generating a response.</p>
-          {documentStatus ? <p>Policy: {documentStatus.policy ? "uploaded" : "not uploaded"} · Guidelines: {documentStatus.guidelines ? "uploaded" : "not uploaded"}</p> : null}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-            <input ref={policyFile} type="file" accept=".txt,text/plain" hidden onChange={(event) => uploadDocument("policy", event)} />
-            <button type="button" disabled={documentBusy || loading} onClick={() => policyFile.current.click()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Upload Policy</button>
-            <button type="button" disabled={documentBusy} onClick={() => downloadDocument("policy")} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Download Policy</button>
-            <input ref={guidelinesFile} type="file" accept=".txt,text/plain" hidden onChange={(event) => uploadDocument("guidelines", event)} />
-            <button type="button" disabled={documentBusy || loading} onClick={() => guidelinesFile.current.click()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Upload Guidelines</button>
-            <button type="button" disabled={documentBusy} onClick={() => downloadDocument("guidelines")} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Download Guidelines</button>
-          </div>
-          {documentBusy ? <p role="status">Processing document...</p> : null}
-          {documentMessage ? <p role="status">{documentMessage}</p> : null}
-          {documentError ? <p role="alert" style={{ color: "#fca5a5" }}>{documentError}</p> : null}
         </section>
 
         <aside role="note" style={{ ...cardStyle, margin: "1.5rem 0", borderColor: "#854d0e", color: "#fef3c7" }}>
@@ -319,12 +217,13 @@ export default function Home() {
           </p>
         ) : null}
 
-        {hasDraft || activePanel !== "generate" ? (
           <section ref={panelRef} tabIndex={-1} aria-labelledby="draft-heading" style={{ ...cardStyle, marginTop: "2rem" }}>
             <h2 id="draft-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>
               {activePanel === "approve"
                 ? "Review and approve"
-                : draftActions.find(({ id }) => id === activePanel)?.label || "Suggested reply — edit before use"}
+                : activePanel === "populate_client_profile"
+                  ? "Populate Client Profile"
+                  : draftActions.find(({ id }) => id === activePanel)?.label || "AI suggested response — edit before use"}
             </h2>
             <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700, marginBottom: "1rem" }}>
               Customer inquiry
@@ -362,6 +261,7 @@ export default function Home() {
               {activePanel === "email_structure" ? "Email body" : activePanel === "text_message" ? "Text message draft" : activePanel === "call_prompts" ? "Call talking points" : currentAction === "populate_client_profile" ? "Profile summary" : "Editable draft"}
               <textarea
                 value={reply}
+                disabled={loading}
                 onChange={(event) => {
                   setReply(event.target.value);
                   setAccepted(false);
@@ -371,6 +271,21 @@ export default function Home() {
                 style={fieldStyle}
               />
             </label>
+            <button type="submit" form="draft-form" disabled={loading || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", marginTop: "1rem", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
+              {loading && !pendingAction ? "Preparing draft…" : hasDraft || reply.trim() ? "Generate New Response" : "Generate Response"}
+            </button>
+            {suggestion ? (
+              <div style={{ marginTop: "1rem", padding: "1rem", background: "#172554", borderRadius: "12px" }}>
+                <h3>New suggestion</h3>
+                <p>Your current draft is unchanged. Review this suggestion before replacing it.</p>
+                <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", font: "inherit" }}>{suggestion.reply}</pre>
+                {suggestion.reviewNote ? <p><strong>Agent review check:</strong> {suggestion.reviewNote}</p> : null}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+                  <button type="button" disabled={loading} onClick={() => { setReply(suggestion.reply); setReviewNote(suggestion.reviewNote); setSuggestion(null); setHasDraft(true); setCurrentAction("generate"); setAccepted(false); setCopied(false); }} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>Use new suggestion</button>
+                  <button type="button" disabled={loading} onClick={() => setSuggestion(null)} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>Keep current draft</button>
+                </div>
+              </div>
+            ) : null}
             {activePanel === "email_structure" ? (
               <div style={{ display: "grid", gap: "0.75rem", marginTop: "1rem" }}>
                 <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
@@ -404,13 +319,17 @@ export default function Home() {
             ) : activePanel !== "generate" ? (
               <>
                 {!reply.trim() ? <p>Generate a response first, then use this action to update it.</p> : null}
-                <button type="button" onClick={() => applyDraftAction(activePanel)} disabled={loading || documentBusy || !reply.trim() || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>
-                  {pendingAction === activePanel ? "Working…" : `Generate ${draftActions.find(({ id }) => id === activePanel)?.label}`}
+                <button type="button" onClick={() => applyDraftAction(activePanel)} disabled={loading || !reply.trim() || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>
+                  {pendingAction === activePanel ? "Working…" : `Generate ${activePanel === "populate_client_profile" ? "Client Profile" : draftActions.find(({ id }) => id === activePanel)?.label}`}
                 </button>
               </>
             ) : null}
           </section>
-        ) : null}
+          <section aria-labelledby="profile-heading" style={{ ...cardStyle, marginTop: "2rem" }}>
+            <h2 id="profile-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Populate Client Profile</h2>
+            <p>Shared customer profiles are not connected. You can draft a profile summary for review; no customer record is opened or saved.</p>
+            <button type="button" onClick={() => { setActivePanel("populate_client_profile"); setCopied(false); }} disabled={loading} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>Populate Client Profile</button>
+          </section>
       </div>
     </main>
   );
