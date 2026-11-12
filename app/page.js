@@ -50,7 +50,6 @@ function getDocuments() {
 export default function Home() {
   const [accessCode, setAccessCode] = useState("");
   const [message, setMessage] = useState("");
-  const [supportContext, setSupportContext] = useState("");
   const [reply, setReply] = useState("");
   const [reviewNote, setReviewNote] = useState("");
   const [loading, setLoading] = useState(false);
@@ -105,7 +104,7 @@ export default function Home() {
       const response = await fetch("/api/reply-draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessCode, message, supportContext, ...getDocuments() }),
+        body: JSON.stringify({ accessCode, message, ...getDocuments() }),
       });
       const data = await response.json();
 
@@ -138,7 +137,6 @@ export default function Home() {
         body: JSON.stringify({
           accessCode,
           message,
-          supportContext,
           action,
           currentDraft: reply,
           ...getDocuments(),
@@ -239,7 +237,7 @@ export default function Home() {
           A useful first draft. Your agent makes the call.
         </h1>
         <p style={{ color: "#cbd5e1", fontSize: "1.05rem", lineHeight: 1.6, maxWidth: "760px" }}>
-          Create a support reply draft using the customer message and any policy or order details you provide. The assistant must flag missing information; a person reviews and edits every draft.
+          Create a support reply draft using the customer message and any uploaded policy or guidelines. The assistant must flag missing information; a person reviews and edits every draft.
         </p>
 
         <section aria-labelledby="actions-heading" style={{ ...cardStyle, margin: "1.5rem 0" }}>
@@ -310,18 +308,6 @@ export default function Home() {
               rows={6}
               style={fieldStyle}
               placeholder="Paste a fictional or redacted support message..."
-            />
-          </label>
-
-          <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
-            Relevant policy or known details <span style={{ color: "#94a3b8", fontWeight: 400 }}>Optional · max 8,000 characters</span>
-            <textarea
-              value={supportContext}
-              onChange={(event) => { setSupportContext(event.target.value); setAccepted(false); }}
-              maxLength={8000}
-              rows={5}
-              style={fieldStyle}
-              placeholder="For example: shipping policy, verified order status, or response tone. Leave blank if you have no confirmed information."
             />
           </label>
 

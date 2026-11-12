@@ -24,7 +24,7 @@ The email editor provides To, Cc, Subject, body, and signature fields for manual
 
 ## What the prototype does
 
-- Accepts one customer message plus optional confirmed policies/details.
+- Accepts one customer message.
 - Optionally uses the policy and guidelines uploaded in the current browser.
 - Produces an editable reply draft and a review note.
 - Instructs the model to avoid guessing and to ask a clarifying question when needed.
