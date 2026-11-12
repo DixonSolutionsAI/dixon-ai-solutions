@@ -47,6 +47,7 @@ export default function Home() {
   const [emailSubject, setEmailSubject] = useState("");
   const [emailSignature, setEmailSignature] = useState("");
   const panelRef = useRef(null);
+  const profileDialogRef = useRef(null);
 
   useEffect(() => {
     if (activePanel !== "generate" && panelRef.current) {
@@ -196,9 +197,12 @@ export default function Home() {
             />
           </label>
 
-          <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
-            Customer message <span style={{ color: "#94a3b8", fontWeight: 400 }}>Required · max 5,000 characters</span>
+          <div style={{ display: "grid", gap: "0.5rem" }}>
+            <label htmlFor="customer-message" style={{ fontWeight: 700 }}>
+              Customer message <span style={{ color: "#94a3b8", fontWeight: 400 }}>Required · max 5,000 characters</span>
+            </label>
             <textarea
+              id="customer-message"
               value={message}
               onChange={(event) => { setMessage(event.target.value); setAccepted(false); }}
               required
@@ -207,9 +211,30 @@ export default function Home() {
               style={fieldStyle}
               placeholder="Paste a fictional or redacted support message..."
             />
-          </label>
-
+            <button type="button" disabled={loading} onClick={() => profileDialogRef.current.showModal()} aria-haspopup="dialog" style={{ ...fieldStyle, width: "fit-content", cursor: "pointer", fontWeight: 700 }}>
+              Populate Client Profile
+            </button>
+          </div>
         </form>
+
+        <dialog ref={profileDialogRef} aria-labelledby="profile-dialog-heading" aria-describedby="profile-dialog-description" style={{ ...cardStyle, color: "#f8fafc", width: "min(90%, 560px)", maxHeight: "80vh", overflowY: "auto", boxSizing: "border-box" }}>
+          <h2 id="profile-dialog-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Client profile</h2>
+          <p id="profile-dialog-description">Shared customer profiles are not connected. Database connection and profile search are not yet available; do not enter customer information or database credentials here.</p>
+          <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
+            Search client profiles
+            <input type="search" disabled placeholder="Available when a database is connected" style={fieldStyle} />
+          </label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem", marginTop: "1rem" }}>
+            <button type="button" disabled style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>Search</button>
+            <button type="button" disabled style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>Connect database</button>
+          </div>
+          <p>A future Supabase integration will require individual sign-in and company-level access controls. Creating a database alone will not connect it.</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+            <button type="button" onClick={() => { profileDialogRef.current.close(); setActivePanel("populate_client_profile"); setCopied(false); panelRef.current?.focus(); }} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Draft profile summary</button>
+            <button type="button" autoFocus onClick={() => profileDialogRef.current.close()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Close</button>
+          </div>
+          <p>Drafting creates an editable summary from the inquiry; it does not open or save a customer record.</p>
+        </dialog>
 
         {error ? (
           <p role="alert" style={{ marginTop: "1rem", padding: "1rem", background: "#7f1d1d", borderRadius: "12px", color: "#fee2e2" }}>
@@ -324,11 +349,6 @@ export default function Home() {
                 </button>
               </>
             ) : null}
-          </section>
-          <section aria-labelledby="profile-heading" style={{ ...cardStyle, marginTop: "2rem" }}>
-            <h2 id="profile-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Populate Client Profile</h2>
-            <p>Shared customer profiles are not connected. You can draft a profile summary for review; no customer record is opened or saved.</p>
-            <button type="button" onClick={() => { setActivePanel("populate_client_profile"); setCopied(false); }} disabled={loading} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>Populate Client Profile</button>
           </section>
       </div>
     </main>

@@ -20,7 +20,7 @@ The files are stored in browser site storage, not shared across browsers or devi
 
 ## Planned connections
 
-The email editor provides To, Cc, Subject, body, and signature fields for manual copying. Gmail and Outlook connection and sending are not implemented; their buttons are disabled. The profile action can draft a summary, but cannot open or store a customer record. Supabase sign-in, company workspace isolation, shared profile storage, and a setup assistant are not implemented. Do not enter real customer information in this prototype.
+The email editor provides To, Cc, Subject, body, and signature fields for manual copying. Gmail and Outlook connection and sending are not implemented; their buttons are disabled. The customer message's profile dialog offers a disabled database connection and search and can open the profile-summary drafting action, but cannot search, open, or store a customer record. Supabase sign-in, company workspace isolation, shared profile storage, and a setup assistant are not implemented. Do not enter real customer information in this prototype.
 
 ## What the prototype does
 
