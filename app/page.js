@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 const fieldStyle = {
   width: "100%",
@@ -43,6 +43,13 @@ export default function Home() {
   const [currentAction, setCurrentAction] = useState("generate");
   const [pendingAction, setPendingAction] = useState("");
   const [accepted, setAccepted] = useState(false);
+  const [ownerPassword, setOwnerPassword] = useState("");
+  const [documentBusy, setDocumentBusy] = useState(false);
+  const [documentMessage, setDocumentMessage] = useState("");
+  const [documentError, setDocumentError] = useState("");
+  const [documentNotice, setDocumentNotice] = useState("");
+  const policyFile = useRef(null);
+  const guidelinesFile = useRef(null);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -68,6 +75,7 @@ export default function Home() {
 
       setReply(data.reply);
       setReviewNote(data.reviewNote);
+      setDocumentNotice(data.documentNotice || "");
     } catch (requestError) {
       setError(requestError.message || "Something went wrong. Please try again.");
     } finally {
@@ -103,6 +111,7 @@ export default function Home() {
       setReply(data.reply);
       setReviewNote(data.reviewNote);
       setCurrentAction(action);
+      setDocumentNotice(data.documentNotice || "");
     } catch (requestError) {
       setError(requestError.message || "Something went wrong. Please try again.");
     } finally {
@@ -117,6 +126,70 @@ export default function Home() {
       setCopied(true);
     } catch {
       setError("Could not access the clipboard. Select and copy the draft manually.");
+    }
+  }
+
+  async function uploadDocument(kind, event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setDocumentMessage("");
+    setDocumentError("");
+    if (!ownerPassword) {
+      setDocumentError("Enter the owner password before uploading.");
+      return;
+    }
+    if (!file.name.toLowerCase().endsWith(".txt") || file.size > 16000) {
+      setDocumentError("Choose a UTF-8 .txt file of at most 16,000 bytes.");
+      return;
+    }
+
+    setDocumentBusy(true);
+    try {
+      const content = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer());
+      const response = await fetch("/api/company-documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, operation: "upload", ownerPassword, content }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to upload the document.");
+      setDocumentMessage(`${data.message} New drafts will use it.`);
+    } catch (requestError) {
+      setDocumentError(requestError.message || "Unable to upload the document.");
+    } finally {
+      setOwnerPassword("");
+      setDocumentBusy(false);
+    }
+  }
+
+  async function downloadDocument(kind) {
+    setDocumentMessage("");
+    setDocumentError("");
+    if (!accessCode.trim()) {
+      setDocumentError("Enter the pilot access code below before downloading.");
+      return;
+    }
+    setDocumentBusy(true);
+    try {
+      const response = await fetch("/api/company-documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, operation: "download", accessCode }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to download the document.");
+      const url = URL.createObjectURL(new Blob([data.content], { type: "text/plain;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${kind}.txt`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setDocumentMessage(`${kind === "policy" ? "Policy" : "Guidelines"} downloaded.`);
+    } catch (requestError) {
+      setDocumentError(requestError.message || "Unable to download the document.");
+    } finally {
+      setDocumentBusy(false);
     }
   }
 
@@ -140,6 +213,26 @@ export default function Home() {
         <p style={{ color: "#cbd5e1", fontSize: "1.05rem", lineHeight: 1.6, maxWidth: "760px" }}>
           Create a support reply draft using the customer message and any policy or order details you provide. The assistant must flag missing information; a person reviews and edits every draft.
         </p>
+
+        <section aria-labelledby="documents-heading" style={{ ...cardStyle, margin: "1.5rem 0" }}>
+          <h2 id="documents-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Company documents</h2>
+          <p>Upload replaces the shared document. Use UTF-8 .txt files, up to 16,000 bytes each. Downloads require the pilot access code below.</p>
+          <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700, marginBottom: "1rem" }}>
+            Owner password for uploads
+            <input type="password" value={ownerPassword} onChange={(event) => setOwnerPassword(event.target.value)} autoComplete="off" maxLength={256} style={fieldStyle} />
+          </label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+            <input ref={policyFile} type="file" accept=".txt,text/plain" hidden onChange={(event) => uploadDocument("policy", event)} />
+            <button type="button" disabled={documentBusy} onClick={() => policyFile.current.click()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Upload Policy</button>
+            <button type="button" disabled={documentBusy} onClick={() => downloadDocument("policy")} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Download Policy</button>
+            <input ref={guidelinesFile} type="file" accept=".txt,text/plain" hidden onChange={(event) => uploadDocument("guidelines", event)} />
+            <button type="button" disabled={documentBusy} onClick={() => guidelinesFile.current.click()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Upload Guidelines</button>
+            <button type="button" disabled={documentBusy} onClick={() => downloadDocument("guidelines")} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Download Guidelines</button>
+          </div>
+          {documentBusy ? <p role="status">Processing document...</p> : null}
+          {documentMessage ? <p role="status">{documentMessage}</p> : null}
+          {documentError ? <p role="alert" style={{ color: "#fca5a5" }}>{documentError}</p> : null}
+        </section>
 
         <aside role="note" style={{ ...cardStyle, margin: "1.5rem 0", borderColor: "#854d0e", color: "#fef3c7" }}>
           <strong>Prototype safety:</strong> Use fictional or redacted examples only. Do not enter real customer personal, payment, health, or account information. Drafts are not sent or saved by this page, and they must be checked before use.
@@ -239,8 +332,9 @@ export default function Home() {
                 <strong>Agent review check:</strong> {reviewNote}
               </div>
             ) : null}
+            {documentNotice ? <p role="status" style={{ color: "#fef3c7" }}>{documentNotice}</p> : null}
             <p style={{ color: "#fef3c7", marginBottom: "1rem" }}>
-              Human review is required. Verify every factual statement and policy detail; this prototype does not send or save anything.
+              Human review is required. Verify every factual statement and policy detail; drafts are not sent or saved.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
               <button
