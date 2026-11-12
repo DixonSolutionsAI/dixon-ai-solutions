@@ -10,7 +10,7 @@ const ACTION_INSTRUCTIONS = {
   apply_policy: "Revise the current draft to follow only the confirmed policy details supplied. Do not invent policy. If required policy details are missing, say what the human agent must verify.",
   rewrite: "Rewrite the current draft for clarity while preserving its intent and all supported facts.",
   more_direct: "Rewrite the current draft to be more direct and concise while staying respectful and preserving supported facts.",
-  email_structure: "Format the current draft as a customer-support email with a concise subject line, greeting, body, and sign-off.",
+  email_structure: "Rewrite the current draft as a customer-support email body with a greeting. Do not include a subject line, recipient fields, or signature; those are entered separately.",
   text_message: "Rewrite the current draft as a brief, natural text message. Preserve supported facts and omit email conventions.",
   call_prompts: "Turn the current draft and customer message into concise talking points and questions for a human support call. Do not write a message to send.",
   populate_client_profile: "Create an editable client-profile summary from facts explicitly present in the customer message and confirmed support details. Use clear field labels and write 'Not provided' for unknown details. Do not infer or add personal details.",

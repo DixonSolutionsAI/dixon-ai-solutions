@@ -18,6 +18,10 @@ Use the home page controls to upload one policy and one guidelines file as non-e
 
 The files are stored in browser site storage, not shared across browsers or devices. Anyone with access to this browser or its site data can read, replace, or download them; clearing site data removes them. Each draft and action sends their contents to the server and OpenAI. Use fictional or redacted content only, review provider retention, and do not upload confidential or sensitive documents. If site storage is blocked, drafting reports an error instead of silently omitting saved documents.
 
+## Planned connections
+
+The email editor provides To, Cc, Subject, body, and signature fields for manual copying. Gmail and Outlook connection and sending are not implemented; their buttons are disabled. The profile action can draft a summary, but cannot open or store a customer record. Supabase sign-in, company workspace isolation, shared profile storage, and a setup assistant are not implemented. Do not enter real customer information in this prototype.
+
 ## What the prototype does
 
 - Accepts one customer message plus optional confirmed policies/details.

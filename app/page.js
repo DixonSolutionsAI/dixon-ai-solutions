@@ -59,12 +59,25 @@ export default function Home() {
   const [currentAction, setCurrentAction] = useState("generate");
   const [pendingAction, setPendingAction] = useState("");
   const [accepted, setAccepted] = useState(false);
+  const [activePanel, setActivePanel] = useState("generate");
+  const [hasDraft, setHasDraft] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailCc, setEmailCc] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailSignature, setEmailSignature] = useState("");
   const [documentBusy, setDocumentBusy] = useState(false);
   const [documentMessage, setDocumentMessage] = useState("");
   const [documentError, setDocumentError] = useState("");
   const [documentStatus, setDocumentStatus] = useState(null);
   const policyFile = useRef(null);
   const guidelinesFile = useRef(null);
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    if (activePanel !== "generate" && panelRef.current) {
+      panelRef.current.focus();
+    }
+  }, [activePanel]);
 
   useEffect(() => {
     function refreshDocuments() {
@@ -102,6 +115,7 @@ export default function Home() {
 
       setReply(data.reply);
       setReviewNote(data.reviewNote);
+      setHasDraft(true);
       setCurrentAction("generate");
     } catch (requestError) {
       setError(requestError.message || "Something went wrong. Please try again.");
@@ -149,7 +163,10 @@ export default function Home() {
 
   async function copyDraft() {
     try {
-      await navigator.clipboard.writeText(reply);
+      const text = activePanel === "email_structure"
+        ? [`To: ${emailTo}`, emailCc && `Cc: ${emailCc}`, `Subject: ${emailSubject}`, "", reply, emailSignature].filter((line) => line !== false).join("\n")
+        : reply;
+      await navigator.clipboard.writeText(text);
       setCopied(true);
     } catch {
       setError("Could not access the clipboard. Select and copy the draft manually.");
@@ -232,19 +249,19 @@ export default function Home() {
             <button type="submit" form="draft-form" disabled={loading || documentBusy || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", cursor: loading || documentBusy ? "wait" : "pointer", fontWeight: 700 }}>
               {loading && !pendingAction ? "Preparing draft…" : "Generate New Response"}
             </button>
-            <button type="button" onClick={() => setAccepted(true)} disabled={loading || accepted || !reply.trim()} aria-pressed={accepted} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>
-              {accepted ? "Accepted" : "Accept/Approve"}
+            <button type="button" onClick={() => { setActivePanel("approve"); setCopied(false); }} disabled={loading} aria-pressed={activePanel === "approve"} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>
+              Accept/Approve
             </button>
             {draftActions.map(({ id, label }) => (
-              <button key={id} type="button" onClick={() => applyDraftAction(id)} disabled={loading || documentBusy || !reply.trim()} style={{ ...fieldStyle, width: "auto", cursor: loading || documentBusy ? "wait" : "pointer", fontWeight: 700 }}>
-                {pendingAction === id ? "Working…" : label}
+              <button key={id} type="button" onClick={() => { setActivePanel(id); setCopied(false); }} disabled={loading} aria-pressed={activePanel === id} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
+                {label}
               </button>
             ))}
             <button type="button" onClick={copyDraft} disabled={loading || !reply.trim()} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
               {copied ? "Copied" : "Copy draft"}
             </button>
           </div>
-          <p style={{ color: "#cbd5e1", marginBottom: 0 }}>Accept/Approve marks the draft for this session only; it does not send or save it.</p>
+          <p style={{ color: "#cbd5e1", marginBottom: 0 }}>Choose an action to open its editor. Accept/Approve marks the draft for this session only; it does not send or save it.</p>
         </section>
 
         <section aria-labelledby="documents-heading" style={{ ...cardStyle, margin: "1.5rem 0" }}>
@@ -287,7 +304,7 @@ export default function Home() {
             Customer message <span style={{ color: "#94a3b8", fontWeight: 400 }}>Required · max 5,000 characters</span>
             <textarea
               value={message}
-              onChange={(event) => setMessage(event.target.value)}
+              onChange={(event) => { setMessage(event.target.value); setAccepted(false); }}
               required
               maxLength={5000}
               rows={6}
@@ -300,7 +317,7 @@ export default function Home() {
             Relevant policy or known details <span style={{ color: "#94a3b8", fontWeight: 400 }}>Optional · max 8,000 characters</span>
             <textarea
               value={supportContext}
-              onChange={(event) => setSupportContext(event.target.value)}
+              onChange={(event) => { setSupportContext(event.target.value); setAccepted(false); }}
               maxLength={8000}
               rows={5}
               style={fieldStyle}
@@ -316,19 +333,47 @@ export default function Home() {
           </p>
         ) : null}
 
-        {reply ? (
-          <section aria-labelledby="draft-heading" style={{ ...cardStyle, marginTop: "2rem" }}>
+        {hasDraft || activePanel !== "generate" ? (
+          <section ref={panelRef} tabIndex={-1} aria-labelledby="draft-heading" style={{ ...cardStyle, marginTop: "2rem" }}>
             <h2 id="draft-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>
-              {currentAction === "populate_client_profile"
-                ? "Editable client profile draft"
-                : currentAction === "call_prompts"
-                  ? "Call prompts for agent"
-                  : currentAction === "generate"
-                    ? "Suggested reply — edit before use"
-                    : "Updated draft — edit before use"}
+              {activePanel === "approve"
+                ? "Review and approve"
+                : draftActions.find(({ id }) => id === activePanel)?.label || "Suggested reply — edit before use"}
             </h2>
+            <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700, marginBottom: "1rem" }}>
+              Customer inquiry
+              <textarea value={message} onChange={(event) => { setMessage(event.target.value); setAccepted(false); }} maxLength={5000} rows={4} style={fieldStyle} />
+            </label>
+            {activePanel === "email_structure" ? (
+              <div style={{ display: "grid", gap: "1rem", marginBottom: "1rem" }}>
+                <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
+                  To
+                  <input type="email" value={emailTo} onChange={(event) => { setEmailTo(event.target.value); setCopied(false); setAccepted(false); }} style={fieldStyle} />
+                </label>
+                <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
+                  Cc
+                  <input type="text" value={emailCc} onChange={(event) => { setEmailCc(event.target.value); setCopied(false); setAccepted(false); }} placeholder="Email addresses, separated by commas" style={fieldStyle} />
+                </label>
+                <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
+                  Subject
+                  <input type="text" value={emailSubject} onChange={(event) => { setEmailSubject(event.target.value); setCopied(false); setAccepted(false); }} style={fieldStyle} />
+                </label>
+              </div>
+            ) : null}
+            {activePanel === "populate_client_profile" ? (
+              <div style={{ marginBottom: "1rem", padding: "1rem", background: "#172554", borderRadius: "12px" }}>
+                Shared customer profiles are not connected yet. You can generate an editable profile summary from the inquiry, but it will not open, retrieve, or save a customer record.
+                <p><button type="button" disabled style={{ ...fieldStyle, width: "auto" }}>Open customer profile</button></p>
+                <details>
+                  <summary>Shared profile setup guidance</summary>
+                  <p>A future integration will need a Supabase project, individual sign-in, and workspace-level database access rules. These are not implemented yet; creating a project alone will not connect profiles.</p>
+                </details>
+              </div>
+            ) : null}
+            {activePanel === "call_prompts" ? <p>Generate talking points and questions for a support call; review and edit them before use.</p> : null}
+            {activePanel === "text_message" ? <p>Generate a short text-message response; review and edit it before use.</p> : null}
             <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
-              {currentAction === "populate_client_profile" ? "Profile details" : "Editable draft"}
+              {activePanel === "email_structure" ? "Email body" : activePanel === "text_message" ? "Text message draft" : activePanel === "call_prompts" ? "Call talking points" : currentAction === "populate_client_profile" ? "Profile summary" : "Editable draft"}
               <textarea
                 value={reply}
                 onChange={(event) => {
@@ -340,6 +385,24 @@ export default function Home() {
                 style={fieldStyle}
               />
             </label>
+            {activePanel === "email_structure" ? (
+              <div style={{ display: "grid", gap: "0.75rem", marginTop: "1rem" }}>
+                <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
+                  Signature
+                  <textarea value={emailSignature} onChange={(event) => { setEmailSignature(event.target.value); setCopied(false); setAccepted(false); }} rows={3} style={fieldStyle} />
+                </label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+                  <button type="button" disabled style={{ ...fieldStyle, width: "auto" }}>Connect Gmail</button>
+                  <button type="button" disabled style={{ ...fieldStyle, width: "auto" }}>Connect Outlook</button>
+                  <button type="button" disabled style={{ ...fieldStyle, width: "auto" }}>Send email</button>
+                </div>
+                <p style={{ color: "#fef3c7", margin: 0 }}>Email connections and sending are not available yet. Copy the completed email to send it manually.</p>
+                <details>
+                  <summary>Email connection setup guidance</summary>
+                  <p>Gmail and Outlook connections will require secure individual sign-in and authorization with Google and Microsoft. These integrations are not implemented yet; do not enter credentials here.</p>
+                </details>
+              </div>
+            ) : null}
             {reviewNote ? (
               <div style={{ marginTop: "1rem", padding: "1rem", background: "#172554", borderRadius: "12px", color: "#dbeafe" }}>
                 <strong>Agent review check:</strong> {reviewNote}
@@ -348,6 +411,18 @@ export default function Home() {
             <p style={{ color: "#fef3c7", marginBottom: "1rem" }}>
               Human review is required. Verify every factual statement and policy detail; drafts are not sent or saved.
             </p>
+            {activePanel === "approve" ? (
+              <button type="button" onClick={() => setAccepted(true)} disabled={loading || accepted || !reply.trim()} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>
+                {accepted ? "Approved for this session" : "Approve current draft"}
+              </button>
+            ) : activePanel !== "generate" ? (
+              <>
+                {!reply.trim() ? <p>Generate a response first, then use this action to update it.</p> : null}
+                <button type="button" onClick={() => applyDraftAction(activePanel)} disabled={loading || documentBusy || !reply.trim() || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>
+                  {pendingAction === activePanel ? "Working…" : `Generate ${draftActions.find(({ id }) => id === activePanel)?.label}`}
+                </button>
+              </>
+            ) : null}
           </section>
         ) : null}
       </div>

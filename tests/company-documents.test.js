@@ -45,11 +45,13 @@ test("draft generation and actions send browser documents to the model", async (
   const body = { accessCode: "pilot-test", message: "Help", companyPolicy: "Returns within 30 days", companyGuidelines: "Be helpful" };
   assert.equal((await POST(makeRequest(body))).status, 200);
   assert.equal((await POST(makeRequest({ ...body, action: "apply_policy", currentDraft: "Draft" }))).status, 200);
+  assert.equal((await POST(makeRequest({ ...body, action: "email_structure", currentDraft: "Draft" }))).status, 200);
   for (const prompt of prompts) {
     const data = JSON.parse(prompt.messages[1].content);
     assert.equal(data.companyPolicy, body.companyPolicy);
     assert.equal(data.companyGuidelines, body.companyGuidelines);
   }
+  assert.match(prompts[2].messages[0].content, /Do not include a subject line, recipient fields, or signature/);
   assert.equal((await POST(makeRequest({ ...body, companyPolicy: "x".repeat(16001) }))).status, 413);
-  assert.equal(prompts.length, 2);
+  assert.equal(prompts.length, 3);
 });
