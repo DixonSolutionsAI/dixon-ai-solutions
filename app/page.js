@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getDocuments } from "./browser-documents";
+import { createMailtoUrl, readTemplates, saveTemplate, deleteTemplate } from "../lib/response-workflow";
 
 const fieldStyle = {
   width: "100%",
@@ -46,14 +47,34 @@ export default function Home() {
   const [emailCc, setEmailCc] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailSignature, setEmailSignature] = useState("");
+  const [templateName, setTemplateName] = useState("");
+  const [templates, setTemplates] = useState([]);
+  const [templateError, setTemplateError] = useState("");
+  const [approvalError, setApprovalError] = useState("");
+  const [approvalStatus, setApprovalStatus] = useState("");
   const panelRef = useRef(null);
   const profileDialogRef = useRef(null);
+  const approvalDialogRef = useRef(null);
 
   useEffect(() => {
     if (activePanel !== "generate" && panelRef.current) {
       panelRef.current.focus();
     }
   }, [activePanel]);
+
+  useEffect(() => {
+    function refreshTemplates() {
+      try {
+        setTemplates(readTemplates(localStorage));
+        setTemplateError("");
+      } catch {
+        setTemplateError("Unable to read saved templates in this browser. Check site storage.");
+      }
+    }
+    refreshTemplates();
+    window.addEventListener("storage", refreshTemplates);
+    return () => window.removeEventListener("storage", refreshTemplates);
+  }, []);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -138,6 +159,66 @@ export default function Home() {
     }
   }
 
+  function approveResponse() {
+    setApprovalError("");
+    if (!reply.trim()) {
+      setApprovalError("Enter a response before accepting.");
+      return;
+    }
+    if (activePanel === "email_structure") {
+      let url;
+      try {
+        url = createMailtoUrl({ to: emailTo, cc: emailCc, subject: emailSubject, body: reply, signature: emailSignature });
+      } catch (validationError) {
+        setApprovalError(validationError.message);
+        return;
+      }
+      try {
+        window.location.href = url;
+      } catch {
+        setApprovalError("Unable to open the email app. Copy the draft and send it manually.");
+        return;
+      }
+      setApprovalStatus("Requested your default email app. Review and send the message there; it has not been sent by this agent.");
+    } else if (activePanel === "text_message" || activePanel === "call_prompts") {
+      try {
+        const updated = saveTemplate(localStorage, { id: crypto.randomUUID(), type: activePanel, label: templateName, body: reply });
+        setTemplates(updated);
+        setTemplateError("");
+        setTemplateName("");
+      } catch (storageError) {
+        setApprovalError(storageError.message || "Unable to save the template in this browser.");
+        return;
+      }
+      setApprovalStatus("Template saved in this browser for manual reuse. No message was sent and no call was made.");
+    } else {
+      setApprovalStatus("Draft approved for this session. Nothing was sent or saved.");
+    }
+    setAccepted(true);
+    approvalDialogRef.current.close();
+  }
+
+  function useTemplate(template) {
+    if (reply.trim() && !window.confirm("Replace the current editable draft with this template?")) return;
+    setReply(template.body);
+    setHasDraft(true);
+    setCurrentAction(template.type);
+    setReviewNote("");
+    setSuggestion(null);
+    setAccepted(false);
+    setCopied(false);
+    setApprovalStatus("");
+  }
+
+  function removeTemplate(id) {
+    try {
+      setTemplates(deleteTemplate(localStorage, id));
+      setTemplateError("");
+    } catch {
+      setTemplateError("Unable to delete the template. Check browser site storage.");
+    }
+  }
+
   return (
     <main
       style={{
@@ -163,11 +244,8 @@ export default function Home() {
           <h2 id="actions-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Response actions</h2>
           <p>Enter your access code and a customer message to generate a response. Review it before using the other actions.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-            <button type="button" onClick={() => { setActivePanel("approve"); setCopied(false); }} disabled={loading} aria-pressed={activePanel === "approve"} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>
-              Accept/Approve
-            </button>
             {draftActions.map(({ id, label }) => (
-              <button key={id} type="button" onClick={() => { setActivePanel(id); setCopied(false); }} disabled={loading} aria-pressed={activePanel === id} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
+              <button key={id} type="button" onClick={() => { setActivePanel(id); setCopied(false); setAccepted(false); }} disabled={loading} aria-pressed={activePanel === id} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
                 {label}
               </button>
             ))}
@@ -175,11 +253,11 @@ export default function Home() {
               {copied ? "Copied" : "Copy draft"}
             </button>
           </div>
-          <p style={{ color: "#cbd5e1", marginBottom: 0 }}>Choose an action to open its editor. Accept/Approve marks the draft for this session only; it does not send or save it.</p>
+          <p style={{ color: "#cbd5e1", marginBottom: 0 }}>Choose an action to open its editor.</p>
         </section>
 
         <aside role="note" style={{ ...cardStyle, margin: "1.5rem 0", borderColor: "#854d0e", color: "#fef3c7" }}>
-          <strong>Prototype safety:</strong> Use fictional or redacted examples only. Do not enter real customer personal, payment, health, or account information. Drafts are not sent or saved by this page, and they must be checked before use.
+          <strong>Prototype safety:</strong> Use fictional or redacted examples only. Do not enter real customer personal, payment, health, or account information. Responses must be checked before use.
         </aside>
 
         <form id="draft-form" onSubmit={handleSubmit} style={{ display: "grid", gap: "1.1rem" }}>
@@ -230,7 +308,7 @@ export default function Home() {
           </div>
           <p>A future Supabase integration will require individual sign-in and company-level access controls. Creating a database alone will not connect it.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-            <button type="button" onClick={() => { profileDialogRef.current.close(); setActivePanel("populate_client_profile"); setCopied(false); panelRef.current?.focus(); }} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Draft profile summary</button>
+            <button type="button" onClick={() => { profileDialogRef.current.close(); setActivePanel("populate_client_profile"); setCopied(false); setAccepted(false); panelRef.current?.focus(); }} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Draft profile summary</button>
             <button type="button" autoFocus onClick={() => profileDialogRef.current.close()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Close</button>
           </div>
           <p>Drafting creates an editable summary from the inquiry; it does not open or save a customer record.</p>
@@ -244,9 +322,7 @@ export default function Home() {
 
           <section ref={panelRef} tabIndex={-1} aria-labelledby="draft-heading" style={{ ...cardStyle, marginTop: "2rem" }}>
             <h2 id="draft-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>
-              {activePanel === "approve"
-                ? "Review and approve"
-                : activePanel === "populate_client_profile"
+              {activePanel === "populate_client_profile"
                   ? "Populate Client Profile"
                   : draftActions.find(({ id }) => id === activePanel)?.label || "AI suggested response — edit before use"}
             </h2>
@@ -299,6 +375,12 @@ export default function Home() {
             <button type="submit" form="draft-form" disabled={loading || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", marginTop: "1rem", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
               {loading && !pendingAction ? "Preparing draft…" : hasDraft || reply.trim() ? "Generate New Response" : "Generate Response"}
             </button>
+            <div style={{ marginTop: "0.6rem" }}>
+              <button type="button" onClick={() => { setApprovalError(""); setApprovalStatus(""); approvalDialogRef.current.showModal(); }} disabled={loading || !reply.trim()} aria-haspopup="dialog" style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>
+                {accepted ? "Review approved response" : "Accept/Approve"}
+              </button>
+            </div>
+            {accepted && approvalStatus ? <p role="status">{approvalStatus}</p> : null}
             {suggestion ? (
               <div style={{ marginTop: "1rem", padding: "1rem", background: "#172554", borderRadius: "12px" }}>
                 <h3>New suggestion</h3>
@@ -322,7 +404,7 @@ export default function Home() {
                   <button type="button" disabled style={{ ...fieldStyle, width: "auto" }}>Connect Outlook</button>
                   <button type="button" disabled style={{ ...fieldStyle, width: "auto" }}>Send email</button>
                 </div>
-                <p style={{ color: "#fef3c7", margin: 0 }}>Email connections and sending are not available yet. Copy the completed email to send it manually.</p>
+                <p style={{ color: "#fef3c7", margin: 0 }}>Accept/Approve can open a draft in your default email app. Direct connections and sending are not available.</p>
                 <details>
                   <summary>Email connection setup guidance</summary>
                   <p>Gmail and Outlook connections will require secure individual sign-in and authorization with Google and Microsoft. These integrations are not implemented yet; do not enter credentials here.</p>
@@ -335,13 +417,9 @@ export default function Home() {
               </div>
             ) : null}
             <p style={{ color: "#fef3c7", marginBottom: "1rem" }}>
-              Human review is required. Verify every factual statement and policy detail; drafts are not sent or saved.
+              Human review is required. Verify every factual statement and policy detail.
             </p>
-            {activePanel === "approve" ? (
-              <button type="button" onClick={() => setAccepted(true)} disabled={loading || accepted || !reply.trim()} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>
-                {accepted ? "Approved for this session" : "Approve current draft"}
-              </button>
-            ) : activePanel !== "generate" ? (
+            {activePanel !== "generate" ? (
               <>
                 {!reply.trim() ? <p>Generate a response first, then use this action to update it.</p> : null}
                 <button type="button" onClick={() => applyDraftAction(activePanel)} disabled={loading || !reply.trim() || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>
@@ -349,7 +427,67 @@ export default function Home() {
                 </button>
               </>
             ) : null}
+            {activePanel === "text_message" || activePanel === "call_prompts" ? (
+              <section aria-labelledby="templates-heading" style={{ marginTop: "1.5rem" }}>
+                <h3 id="templates-heading">Saved templates</h3>
+                <p>Templates are stored only in this browser and selected manually. Anyone using this browser can read them; clearing site data removes them. Do not save sensitive information.</p>
+                {templateError ? <p role="alert">{templateError}</p> : null}
+                {templates.filter((template) => template.type === activePanel).length === 0 ? <p>No templates saved for this response type.</p> : null}
+                {templates.filter((template) => template.type === activePanel).map((template) => (
+                  <div key={template.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.6rem", marginBottom: "0.6rem" }}>
+                    <span>{template.label}</span>
+                    <button type="button" disabled={loading} onClick={() => useTemplate(template)} style={{ ...fieldStyle, width: "auto" }}>Use template</button>
+                    <button type="button" disabled={loading} onClick={() => removeTemplate(template.id)} aria-label={`Delete ${template.label}`} style={{ ...fieldStyle, width: "auto" }}>Delete</button>
+                  </div>
+                ))}
+              </section>
+            ) : null}
           </section>
+          <dialog ref={approvalDialogRef} aria-labelledby="approval-heading" aria-describedby="approval-description" style={{ ...cardStyle, color: "#f8fafc", width: "min(90%, 640px)", maxHeight: "85vh", overflowY: "auto", boxSizing: "border-box" }}>
+            <h2 id="approval-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Review before accepting</h2>
+            <p id="approval-description">
+              {activePanel === "email_structure"
+                ? "Accept opens your default email app with this draft. Review and send it there; the agent does not send email."
+                : activePanel === "text_message" || activePanel === "call_prompts"
+                  ? "Accept saves this response as a template in this browser for manual reuse. No message is sent or call made. Anyone using this browser can read it; do not save sensitive information."
+                  : "Accept marks this draft approved for this session. Nothing is sent or saved."}
+            </p>
+            {activePanel === "email_structure" ? (
+              <div style={{ display: "grid", gap: "0.75rem" }}>
+                <label style={{ display: "grid", gap: "0.5rem" }}>To
+                  <input type="email" multiple value={emailTo} onChange={(event) => { setEmailTo(event.target.value); setAccepted(false); setCopied(false); }} style={fieldStyle} />
+                </label>
+                <label style={{ display: "grid", gap: "0.5rem" }}>Cc
+                  <input type="email" multiple value={emailCc} onChange={(event) => { setEmailCc(event.target.value); setAccepted(false); setCopied(false); }} style={fieldStyle} />
+                </label>
+                <label style={{ display: "grid", gap: "0.5rem" }}>Subject
+                  <input value={emailSubject} onChange={(event) => { setEmailSubject(event.target.value); setAccepted(false); setCopied(false); }} style={fieldStyle} />
+                </label>
+              </div>
+            ) : null}
+            <label style={{ display: "grid", gap: "0.5rem", marginTop: "0.75rem" }}>
+              {activePanel === "email_structure" ? "Email body" : "Response"}
+              <textarea value={reply} onChange={(event) => { setReply(event.target.value); setAccepted(false); setCopied(false); }} rows={7} style={fieldStyle} />
+            </label>
+            {activePanel === "email_structure" ? (
+              <>
+                <label style={{ display: "grid", gap: "0.5rem", marginTop: "0.75rem" }}>Signature
+                  <textarea value={emailSignature} onChange={(event) => { setEmailSignature(event.target.value); setAccepted(false); setCopied(false); }} rows={3} style={fieldStyle} />
+                </label>
+                <p>Email-app availability and draft length depend on your device. Check all fields in the email app before sending.</p>
+              </>
+            ) : null}
+            {activePanel === "text_message" || activePanel === "call_prompts" ? (
+              <label style={{ display: "grid", gap: "0.5rem", marginTop: "0.75rem" }}>Template name
+                <input value={templateName} maxLength={100} onChange={(event) => setTemplateName(event.target.value)} placeholder="Name for manual reuse" style={fieldStyle} />
+              </label>
+            ) : null}
+            {approvalError ? <p role="alert" style={{ color: "#fca5a5" }}>{approvalError}</p> : null}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem", marginTop: "1rem" }}>
+              <button type="button" onClick={approveResponse} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Accept</button>
+              <button type="button" autoFocus onClick={() => approvalDialogRef.current.close()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Cancel</button>
+            </div>
+          </dialog>
       </div>
     </main>
   );

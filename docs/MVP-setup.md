@@ -20,7 +20,9 @@ The files are stored in browser site storage, not shared across browsers or devi
 
 ## Planned connections
 
-The email editor provides To, Cc, Subject, body, and signature fields for manual copying. Gmail and Outlook connection and sending are not implemented; their buttons are disabled. The customer message's profile dialog offers a disabled database connection and search and can open the profile-summary drafting action, but cannot search, open, or store a customer record. Supabase sign-in, company workspace isolation, shared profile storage, and a setup assistant are not implemented. Do not enter real customer information in this prototype.
+The email editor provides To, Cc, Subject, body, and signature fields. Accepting an email opens a prefilled draft using the device's default email app; the user must review and send it there. Email-app availability and draft length depend on the device. Direct Gmail and Outlook connection and sending are not implemented; their buttons are disabled. The customer message's profile dialog offers a disabled database connection and search and can open the profile-summary drafting action, but cannot search, open, or store a customer record. Supabase sign-in, company workspace isolation, shared profile storage, and a setup assistant are not implemented. Do not enter real customer information in this prototype.
+
+Accepting a text or call response saves it as a named template in browser site storage, not a shared database. Templates are selected manually, not automatically matched to inquiries. Anyone using this browser can read them and clearing site data removes them. Never save sensitive information in templates.
 
 ## What the prototype does
 
@@ -29,7 +31,7 @@ The email editor provides To, Cc, Subject, body, and signature fields for manual
 - Produces an editable reply draft and a review note.
 - Shows regenerated responses separately so the edited draft stays unchanged until the agent chooses a suggestion.
 - Instructs the model to avoid guessing and to ask a clarifying question when needed.
-- Requires human verification and does not send or persist the generated draft in the application.
+- Requires human verification; the agent never sends messages or makes calls. Only explicitly accepted text and call templates are stored in the browser.
 
 ## Safe evaluation
 
