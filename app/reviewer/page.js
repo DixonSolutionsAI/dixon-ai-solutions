@@ -30,12 +30,8 @@ export default function ReviewerPage() {
     if (!reviewerCode) return;
     let alive = true;
     const refresh = async () => {
-      try {
-        await loadQueue();
-        if (alive) setError("");
-      } catch (requestError) {
-        if (alive) setError(requestError.message);
-      }
+      try { await loadQueue(); if (alive) setError(""); }
+      catch (requestError) { if (alive) setError(requestError.message); }
     };
     refresh();
     const timer = setInterval(refresh, 5000);
@@ -56,11 +52,8 @@ export default function ReviewerPage() {
       if (!response.ok) throw new Error(data.error || "Approval failed.");
       setNotice("Approved. The consumer can now receive the verified reply.");
       await loadQueue();
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (requestError) { setError(requestError.message); }
+    finally { setLoading(false); }
   }
 
   function setCannedReply(pendingId, text) {
@@ -71,7 +64,7 @@ export default function ReviewerPage() {
     <main style={{ minHeight: "100vh", padding: "32px 20px", background: "#020617", color: "#f8fafc", fontFamily: "Arial, sans-serif" }}>
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <h1>Branch review queue</h1>
-        <p>Verify the facts and edit the response before approving. Approval releases the reply to the consumer.</p>
+        <p>Verify the facts and edit the response before approving. Confidence is an AI estimate, not a correctness guarantee.</p>
         <label style={{ display: "grid", gap: 8, maxWidth: 480, marginBottom: 24 }}>
           Reviewer access code
           <input type="password" autoComplete="current-password" value={reviewerCode} onChange={(event) => setReviewerCode(event.target.value)} style={inputStyle} />
@@ -81,25 +74,20 @@ export default function ReviewerPage() {
         {!drafts.length && reviewerCode ? <p>No pending drafts.</p> : null}
         {drafts.map((draft) => (
           <article key={draft.pending_id} style={panelStyle}>
-            <h2 style={{ marginTop: 0 }}>{draft.location}</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+              <h2 style={{ marginTop: 0 }}>{draft.location}</h2>
+              <span aria-label={draft.confidence == null ? "No AI confidence score" : `AI confidence estimate ${draft.confidence} out of 100`} style={{ alignSelf: "start", padding: "0.35rem 0.6rem", borderRadius: 999, background: draft.confidence != null && draft.confidence < 60 ? "#7f1d1d" : "#1e3a8a", color: "#dbeafe", fontSize: "0.85rem" }}>
+                {draft.confidence == null ? "Mock · no confidence score" : `AI confidence estimate: ${draft.confidence}/100`}
+              </span>
+            </div>
             <p><strong>Customer message</strong></p>
             <blockquote style={{ margin: "0 0 1rem", color: "#cbd5e1", whiteSpace: "pre-wrap" }}>{draft.customer_message}</blockquote>
             <p><strong>Agent review check:</strong> {draft.review_note}</p>
             <label style={{ display: "grid", gap: 8, fontWeight: 700 }}>
               Edit the draft before approval
-              <textarea
-                rows={6}
-                maxLength={8000}
-                value={replies[draft.pending_id] ?? draft.draft_reply}
-                onChange={(event) => setReplies((current) => ({ ...current, [draft.pending_id]: event.target.value }))}
-                onKeyDown={(event) => {
-                  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-                    event.preventDefault();
-                    approve(draft.pending_id);
-                  }
-                }}
-                style={inputStyle}
-              />
+              <textarea rows={6} maxLength={8000} value={replies[draft.pending_id] ?? draft.draft_reply} onChange={(event) => setReplies((current) => ({ ...current, [draft.pending_id]: event.target.value }))} onKeyDown={(event) => {
+                if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); approve(draft.pending_id); }
+              }} style={inputStyle} />
             </label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "12px 0" }}>
               <button type="button" onClick={() => setCannedReply(draft.pending_id, "Please call your local branch so a specialist can assist you directly.")}>Ask them to call us</button>
