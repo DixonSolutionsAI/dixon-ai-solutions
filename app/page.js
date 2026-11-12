@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LOCATION_DATA, LOCATION_OPTIONS } from "../lib/location-data.js";
 
 const fieldStyle = {
   width: "100%",
@@ -23,6 +24,7 @@ const cardStyle = {
 
 export default function Home() {
   const [accessCode, setAccessCode] = useState("");
+  const [location, setLocation] = useState(LOCATION_OPTIONS[0] || "");
   const [message, setMessage] = useState("");
   const [supportContext, setSupportContext] = useState("");
   const [reply, setReply] = useState("");
@@ -30,6 +32,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+
+  const selectedLocationDetails = location ? LOCATION_DATA[location] : null;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -43,7 +47,7 @@ export default function Home() {
       const response = await fetch("/api/reply-draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessCode, message, supportContext }),
+        body: JSON.stringify({ accessCode, location, message, supportContext }),
       });
       const data = await response.json();
 
@@ -91,7 +95,7 @@ export default function Home() {
         </p>
 
         <aside role="note" style={{ ...cardStyle, margin: "1.5rem 0", borderColor: "#854d0e", color: "#fef3c7" }}>
-          <strong>Prototype safety:</strong> Use fictional or redacted examples only. Do not enter real customer personal, payment, health, or account information. Drafts are not sent or saved by this page, and they must be checked before use.
+          <strong>Prototype safety:</strong> Use fictional or redacted examples only. Do not enter real customer personal, payment, health, or account information. Drafts are not sent or saved by the prototype.
         </aside>
 
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.1rem" }}>
@@ -108,6 +112,33 @@ export default function Home() {
               placeholder="Provided by the pilot owner"
             />
           </label>
+
+          <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
+            Branch location
+            <select
+              value={location}
+              onChange={(event) => setLocation(event.target.value)}
+              style={fieldStyle}
+            >
+              {LOCATION_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {selectedLocationDetails ? (
+            <div style={{ ...cardStyle, borderColor: "#38bdf8" }}>
+              <div style={{ fontWeight: 700, color: "#7dd3fc", marginBottom: "0.6rem" }}>Verified local branch details</div>
+              <div style={{ color: "#e2e8f0", display: "grid", gap: "0.35rem" }}>
+                <div><strong>Hours:</strong> {selectedLocationDetails.hours}</div>
+                <div><strong>Phone:</strong> {selectedLocationDetails.phone}</div>
+                <div><strong>Policy:</strong> {selectedLocationDetails.policy}</div>
+                <div><strong>Manager:</strong> {selectedLocationDetails.managerEmail}</div>
+              </div>
+            </div>
+          ) : null}
 
           <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
             Customer message <span style={{ color: "#94a3b8", fontWeight: 400 }}>Required · max 5,000 characters</span>
