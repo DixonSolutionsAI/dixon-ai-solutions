@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { LOCATION_DATA, LOCATION_OPTIONS } from "../lib/location-data.js";
+import { useEffect, useMemo, useState } from "react";
 
 const fieldStyle = {
   width: "100%",
@@ -22,9 +21,30 @@ const cardStyle = {
   padding: "1.25rem",
 };
 
+const LOCATION_DATA = {
+  "Fort Worth, TX": {
+    hours: "Mon–Sat 9am–7pm",
+    phone: "(817) 555-0140",
+    policy: "Free local delivery within 10 miles.",
+    managerEmail: "fortworth.manager@dixonai.example",
+  },
+  "Dallas, TX": {
+    hours: "Mon–Sun 8am–8pm",
+    phone: "(214) 555-0188",
+    policy: "Curbside pickup only after 6pm.",
+    managerEmail: "dallas.manager@dixonai.example",
+  },
+  "Austin, TX": {
+    hours: "Mon–Sat 9am–6pm",
+    phone: "(512) 555-0132",
+    policy: "In-store pickup available on all orders.",
+    managerEmail: "austin.manager@dixonai.example",
+  },
+};
+
 export default function Home() {
   const [accessCode, setAccessCode] = useState("");
-  const [location, setLocation] = useState(LOCATION_OPTIONS[0] || "");
+  const [location, setLocation] = useState("Fort Worth, TX");
   const [message, setMessage] = useState("");
   const [supportContext, setSupportContext] = useState("");
   const [reply, setReply] = useState("");
@@ -32,8 +52,38 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [status, setStatus] = useState("Idle");
+  const [pendingId, setPendingId] = useState("");
+  const [queuePoll, setQueuePoll] = useState(0);
 
-  const selectedLocationDetails = location ? LOCATION_DATA[location] : null;
+  const selectedLocationDetails = useMemo(() => LOCATION_DATA[location] || null, [location]);
+
+  useEffect(() => {
+    if (!pendingId) return;
+
+    const timer = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/approval-status?pendingId=${encodeURIComponent(pendingId)}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Could not load approval status.");
+        }
+
+        setStatus(data.status || "Waiting");
+
+        if (data.status === "approved" && data.approvedReply) {
+          setReply(data.approvedReply);
+          setReviewNote(data.reviewNote || "Approved by reviewer.");
+          clearInterval(timer);
+        }
+      } catch {
+        // Intentionally silent; the status message remains visible while polling.
+      }
+    }, 2000);
+
+    return () => clearInterval(timer);
+  }, [pendingId, queuePoll]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -42,6 +92,8 @@ export default function Home() {
     setReply("");
     setReviewNote("");
     setCopied(false);
+    setPendingId("");
+    setStatus("Drafting response...");
 
     try {
       const response = await fetch("/api/reply-draft", {
@@ -55,10 +107,16 @@ export default function Home() {
         throw new Error(data.error || "Unable to generate a draft.");
       }
 
-      setReply(data.reply);
-      setReviewNote(data.reviewNote);
+      if (data.pendingId) {
+        setPendingId(data.pendingId);
+        setStatus("Routing to a local specialist for verification...");
+      }
+
+      setReply(data.reply || "");
+      setReviewNote(data.reviewNote || "");
     } catch (requestError) {
       setError(requestError.message || "Something went wrong. Please try again.");
+      setStatus("Idle");
     } finally {
       setLoading(false);
     }
@@ -90,6 +148,11 @@ export default function Home() {
         <h1 style={{ fontSize: "clamp(2.2rem, 5vw, 3.8rem)", lineHeight: 1.1, marginBottom: "0.8rem" }}>
           A useful first draft. Your agent makes the call.
         </h1>
+
+        <div style={{ ...cardStyle, margin: "1.25rem 0", borderColor: "#1d4ed8" }}>
+          <strong style={{ color: "#93c5fd" }}>Status:</strong> {status}
+        </div>
+
         <p style={{ color: "#cbd5e1", fontSize: "1.05rem", lineHeight: 1.6, maxWidth: "760px" }}>
           Create a support reply draft using the customer message and any policy or order details you provide. The assistant must flag missing information; a person reviews and edits every draft.
         </p>
@@ -115,12 +178,8 @@ export default function Home() {
 
           <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
             Branch location
-            <select
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              style={fieldStyle}
-            >
-              {LOCATION_OPTIONS.map((option) => (
+            <select value={location} onChange={(event) => setLocation(event.target.value)} style={fieldStyle}>
+              {Object.keys(LOCATION_DATA).map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
