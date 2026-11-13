@@ -1,15 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useStaff } from "../staff-context";
-import { EVENT_LABELS, dateKey, formatDuration, getAllowedEvents, summarizeDay } from "../../../lib/staff";
+import { EVENT_LABELS, KIND_LABELS, dateKey, formatDuration, getAllowedEvents, summarizeDay } from "../../../lib/staff";
 
 const card = { maxWidth: "900px", margin: "0 auto 1rem", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "16px", padding: "1.25rem" };
 const field = { width: "100%", borderRadius: "12px", border: "1px solid #334155", background: "#020617", color: "white", padding: "0.8rem 1rem", fontSize: "1rem", boxSizing: "border-box" };
 const button = { ...field, width: "auto", cursor: "pointer", fontWeight: 700 };
 const label = { display: "grid", gap: "0.4rem", fontWeight: 700 };
-const STATUS_TEXT = { out: "Clocked out", working: "Working", lunch: "On lunch", break: "On break" };
-const KIND_TEXT = { work: "Work", lunch: "Lunch", break: "Break" };
+const STATUS_TEXT = { out: "Clocked out", working: "Working", lunch: "On lunch", break: "On break", break30: "On 30 minute break", break60: "On hour break", cue: "In Cue Time", meeting: "In a meeting" };
 const time = (iso) => (iso ? new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "now");
 
 function SignIn() {
@@ -60,19 +59,55 @@ function SignIn() {
   );
 }
 
-function Report({ events }) {
-  const dates = useMemo(() => [...new Set([dateKey(new Date()), ...events.map((event) => dateKey(event.at))])].sort().reverse(), [events]);
-  const [date, setDate] = useState(dates[0]);
+function Report({ events, employee, now }) {
+  const [date, setDate] = useState(() => dateKey(new Date()));
   const [kind, setKind] = useState("all");
-  const summary = summarizeDay(events.filter((event) => dateKey(event.at) === date));
+  const [message, setMessage] = useState("");
+  const summary = summarizeDay(events, now, date);
   const sessions = summary.sessions.filter((session) => kind === "all" || session.kind === kind);
+  const text = [
+    `Timesheet: ${employee.name} (${employee.employeeId})`,
+    `Date: ${date}`,
+    `Worked: ${formatDuration(summary.workedMs)} · Lunch: ${formatDuration(summary.lunchMs)} · Break: ${formatDuration(summary.breakMs)}`,
+    ...summary.sessions.map((session) => `${KIND_LABELS[session.kind]}: ${time(session.start)} – ${time(session.end)} (${formatDuration(session.durationMs)})`),
+  ].join("\n");
+
+  function print() {
+    const popup = window.open("", "_blank");
+    if (!popup) {
+      setMessage("Unable to open the print window. Allow pop-ups and try again.");
+      return;
+    }
+    popup.document.title = "Timesheet";
+    const content = popup.document.createElement("pre");
+    content.style.whiteSpace = "pre-wrap";
+    content.textContent = text;
+    popup.document.body.appendChild(content);
+    popup.print();
+  }
+
+  async function share() {
+    setMessage("");
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Timesheet", text });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+        setMessage("Timesheet copied to the clipboard.");
+      } else {
+        setMessage("Sharing is unavailable in this browser. Use Print instead.");
+      }
+    } catch (err) {
+      if (err.name !== "AbortError") setMessage("Unable to share the timesheet. Try Print instead.");
+    }
+  }
 
   return (
     <section style={card} aria-labelledby="report-heading">
       <h2 id="report-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Daily log and report</h2>
       <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
         <label style={label}>Date
-          <select style={field} value={date} onChange={(event) => setDate(event.target.value)}>{dates.map((d) => <option key={d} value={d}>{d}</option>)}</select>
+          <input style={field} type="date" value={date} onChange={(event) => setDate(event.target.value)} />
         </label>
         <label style={label}>Session type
           <select style={field} value={kind} onChange={(event) => setKind(event.target.value)}>
@@ -80,6 +115,10 @@ function Report({ events }) {
             <option value="work">Work</option>
             <option value="lunch">Lunch</option>
             <option value="break">Break</option>
+            <option value="break30">30 minute break</option>
+            <option value="break60">Hour break</option>
+            <option value="cue">Cue Time</option>
+            <option value="meeting">Meeting</option>
           </select>
         </label>
       </div>
@@ -88,31 +127,42 @@ function Report({ events }) {
       {sessions.length ? (
         <ul style={{ paddingLeft: "1.25rem" }}>
           {sessions.map((session) => (
-            <li key={session.start}>{KIND_TEXT[session.kind]}: {time(session.start)} – {time(session.end)} ({formatDuration(session.durationMs)})</li>
+            <li key={session.start}>{KIND_LABELS[session.kind]}: {time(session.start)} – {time(session.end)} ({formatDuration(session.durationMs)})</li>
           ))}
         </ul>
       ) : <p>No sessions recorded.</p>}
+      <h3>Keep a copy of this timesheet</h3>
+      <p>Print or share the full timesheet for {date}. Records are stored only in this browser.</p>
+      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+        <button type="button" style={button} onClick={print}>Print timesheet</button>
+        <button type="button" style={button} onClick={share}>Share timesheet</button>
+      </div>
+      {message ? <p role="status">{message}</p> : null}
     </section>
   );
 }
 
 export default function EmployeePage() {
   const { employee, myEvents, status, signOut, record } = useStaff();
-  const [action, setAction] = useState("");
   const [error, setError] = useState("");
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
   const allowed = getAllowedEvents(myEvents);
-  const selected = allowed.includes(action) ? action : allowed[0];
 
   if (!employee) return <main style={{ padding: "40px 20px 64px" }}><SignIn /></main>;
 
-  const today = summarizeDay(myEvents.filter((event) => dateKey(event.at) === dateKey(new Date())));
+  const today = summarizeDay(myEvents, now, dateKey(now));
 
-  function submit(event) {
-    event.preventDefault();
+  function selectAction(event) {
+    const selected = event.target.value;
+    if (!selected) return;
     try {
       record(selected);
       setError("");
-      setAction("");
+      setNow(new Date());
     } catch (err) {
       setError(err.message);
     }
@@ -123,19 +173,20 @@ export default function EmployeePage() {
       <section style={card} aria-labelledby="employee-heading">
         <h1 id="employee-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Welcome, {employee.name}</h1>
         <p>Company ID {employee.employeeId} · Status: <strong>{STATUS_TEXT[status]}</strong></p>
-        <form onSubmit={submit} style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "end" }}>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "end" }}>
           <label style={label}>Time clock action
-            <select style={field} value={selected} onChange={(event) => setAction(event.target.value)}>
+            <select style={field} value="" onChange={selectAction}>
+              <option value="">Select an action</option>
               {allowed.map((type) => <option key={type} value={type}>{EVENT_LABELS[type]}</option>)}
             </select>
           </label>
-          <button type="submit" style={button}>Record</button>
           <button type="button" onClick={signOut} disabled={status !== "out"} title={status !== "out" ? "Clock out before signing out." : undefined} style={{ ...button, background: "transparent", color: "#7dd3fc" }}>Sign out</button>
-        </form>
+        </div>
         {error ? <p role="alert" style={{ color: "#fca5a5" }}>{error}</p> : null}
-        <p>Today: worked <strong>{formatDuration(today.workedMs)}</strong>, lunch <strong>{formatDuration(today.lunchMs)}</strong>, break <strong>{formatDuration(today.breakMs)}</strong></p>
+        <p>Actions are recorded immediately. Sessions exceeding their limit require supervisor review in this browser.</p>
+        <p>Today ({dateKey(now)}): worked <strong>{formatDuration(today.workedMs)}</strong>, lunch <strong>{formatDuration(today.lunchMs)}</strong>, break <strong>{formatDuration(today.breakMs)}</strong></p>
       </section>
-      <Report events={myEvents} />
+      <Report events={myEvents} employee={employee} now={now} />
     </main>
   );
 }

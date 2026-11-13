@@ -211,7 +211,7 @@ export default function WorkSpace() {
     }
   }
 
-  if (!employee || status !== "working") {
+  if (!employee || !["working", "cue", "meeting"].includes(status)) {
     return (
       <main style={{ padding: "40px 20px 64px" }}>
         <section style={{ maxWidth: "900px", margin: "0 auto", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "16px", padding: "1.25rem" }}>
