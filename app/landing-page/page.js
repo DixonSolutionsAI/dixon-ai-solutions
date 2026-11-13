@@ -177,8 +177,7 @@ export default function LandingPage() {
           <p style={eyebrow}>Get Started</p>
           <h2 style={{ marginTop: 0 }}>Choose your next step</h2>
           <p style={{ color: "#dfe7f5", maxWidth: "800px" }}>
-            Start using the workspace, talk with us about a demo, or review pricing—all here on
-            the All-in-One page.
+            Start using the workspace or review pricing—all here on the All-in-One page.
           </p>
           <div style={grid}>
             <article style={card}>
@@ -189,26 +188,6 @@ export default function LandingPage() {
               <a href="/get-started/employee" style={{ color: "#7dd3fc", fontWeight: 700 }}>
                 Open employee access
               </a>
-            </article>
-            <article id="demo" style={{ ...card, scrollMarginTop: "2rem" }}>
-              <h3 style={{ color: "#7dd3fc", marginTop: 0 }}>Book a demo</h3>
-              <p style={{ color: "#dfe7f5" }}>
-                Talk through your support workflow and see whether OfficeVault AI could fit your
-                team.
-              </p>
-              <a
-                href="https://calendly.com"
-                style={{ color: "#7dd3fc", fontWeight: 700 }}
-              >
-                Request a demo
-              </a>
-              <p style={{ color: "#94a3b8", marginBottom: 0 }}>
-                Or email{" "}
-                <a href="mailto:hello@instantreply.ai" style={{ color: "#7dd3fc" }}>
-                  hello@instantreply.ai
-                </a>
-                .
-              </p>
             </article>
             <article style={card}>
               <h3 style={{ color: "#7dd3fc", marginTop: 0 }}>View pricing</h3>

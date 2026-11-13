@@ -1,7 +1,8 @@
 const links = [
-  { href: "/landing-page", label: "All-in-One" },
+  { href: "/get-started", label: "All-in-One" },
   { href: "/about", label: "About" },
   { href: "/services", label: "Services" },
+  { href: "https://calendly.com", label: "Demo" },
 ];
 
 export default function BrandHeader() {
