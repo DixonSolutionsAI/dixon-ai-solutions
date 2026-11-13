@@ -28,7 +28,7 @@ Accepting a text or call response saves it as a named template in browser site s
 
 ## What the prototype does
 
-- Accepts one customer message.
+- Uses one customer inquiry field for all response actions.
 - Optionally uses the policy and guidelines uploaded in the current browser.
 - Produces an editable reply draft and a review note.
 - Shows regenerated responses separately so the edited draft stays unchanged until the agent chooses a suggestion.

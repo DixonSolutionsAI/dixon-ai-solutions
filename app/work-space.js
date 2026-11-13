@@ -222,7 +222,7 @@ export default function WorkSpace() {
         <h1 style={{ fontSize: "2rem", marginBottom: "0.8rem" }}>Work Space</h1>
         <section aria-labelledby="actions-heading" style={{ ...cardStyle, margin: "1.5rem 0" }}>
           <h2 id="actions-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Response actions</h2>
-          <p>Enter your pilot code in <Link href="/get-started/access" style={{ color: "#7dd3fc" }}>Access</Link> and a customer message to generate a response. Review it before using the other actions.</p>
+          <p>Enter your pilot code in <Link href="/get-started/access" style={{ color: "#7dd3fc" }}>Access</Link> and the customer inquiry to generate a response. Review it before using the other actions.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
             {draftActions.map(({ id, label }) => (
               <button key={id} type="button" onClick={() => { setActivePanel(id); setAccepted(false); }} disabled={loading} aria-pressed={activePanel === id} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
@@ -240,7 +240,7 @@ export default function WorkSpace() {
         <form id="draft-form" onSubmit={handleSubmit} style={{ display: "grid", gap: "1.1rem" }}>
           <div style={{ display: "grid", gap: "0.5rem" }}>
             <label htmlFor="customer-message" style={{ fontWeight: 700 }}>
-              Customer message <span style={{ color: "#94a3b8", fontWeight: 400 }}>Required · max 5,000 characters</span>
+              Customer inquiry <span style={{ color: "#94a3b8", fontWeight: 400 }}>Required · max 5,000 characters</span>
             </label>
             <textarea
               id="customer-message"
@@ -250,7 +250,7 @@ export default function WorkSpace() {
               maxLength={5000}
               rows={6}
               style={fieldStyle}
-              placeholder="Paste a fictional or redacted support message..."
+              placeholder="Describe why the customer reached out, using fictional or redacted details..."
             />
             <button type="button" disabled={loading} onClick={() => profileDialogRef.current.showModal()} aria-haspopup="dialog" style={{ ...fieldStyle, width: "fit-content", cursor: "pointer", fontWeight: 700 }}>
               Populate Client Profile
@@ -289,10 +289,6 @@ export default function WorkSpace() {
                   ? "Populate Client Profile"
                   : draftActions.find(({ id }) => id === activePanel)?.label || "AI suggested response — edit before use"}
             </h2>
-            <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700, marginBottom: "1rem" }}>
-              Customer inquiry
-              <textarea value={message} onChange={(event) => { setMessage(event.target.value); setAccepted(false); }} maxLength={5000} rows={4} style={fieldStyle} />
-            </label>
             {activePanel === "email_structure" ? (
               <div style={{ display: "grid", gap: "1rem", marginBottom: "1rem" }}>
                 <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
