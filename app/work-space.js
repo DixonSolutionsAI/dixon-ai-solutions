@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { getDocuments } from "./browser-documents";
 import { useAccess } from "./get-started/access-context";
+import { useStaff } from "./get-started/staff-context";
 import { createMailtoUrl, readTemplates, saveTemplate, deleteTemplate } from "../lib/response-workflow";
 
 const fieldStyle = {
@@ -39,7 +40,8 @@ export default function WorkSpace() {
   const activePanel = actionPath === "profile"
     ? "populate_client_profile"
     : draftActions.find(({ path }) => path === actionPath)?.id;
-  const { accessCode } = useAccess();
+  const { unlocked } = useAccess();
+  const { employee, status } = useStaff();
   const [message, setMessage] = useState("");
   const [reply, setReply] = useState("");
   const [reviewNote, setReviewNote] = useState("");
@@ -92,7 +94,7 @@ export default function WorkSpace() {
       const response = await fetch("/api/reply-draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessCode, message, currentDraft: reply, ...getDocuments() }),
+        body: JSON.stringify({ message, currentDraft: reply, ...getDocuments() }),
       });
       const data = await response.json();
 
@@ -127,7 +129,6 @@ export default function WorkSpace() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          accessCode,
           message,
           action,
           currentDraft: reply,
@@ -208,6 +209,18 @@ export default function WorkSpace() {
     } catch {
       setTemplateError("Unable to delete the template. Check browser site storage.");
     }
+  }
+
+  if (!employee || status !== "working") {
+    return (
+      <main style={{ padding: "40px 20px 64px" }}>
+        <section style={{ maxWidth: "900px", margin: "0 auto", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "16px", padding: "1.25rem" }}>
+          <h1 style={{ color: "#7dd3fc", marginTop: 0 }}>Work Space is locked</h1>
+          <p>{!employee ? "Sign in on the Employee tab and clock in to start work." : "Clock in (or end your lunch or break) on the Employee tab to continue working."}</p>
+          <Link href="/get-started/employee" style={{ color: "#7dd3fc" }}>Go to Employee tab</Link>
+        </section>
+      </main>
+    );
   }
 
   return (
@@ -339,7 +352,7 @@ export default function WorkSpace() {
                 style={fieldStyle}
               />
             </label>
-            <button type="submit" form="draft-form" disabled={loading || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", marginTop: "1rem", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
+            <button type="submit" form="draft-form" disabled={loading || !message.trim() || !unlocked} title={unlocked ? undefined : "Ask an administrator to unlock the pilot in Access."} style={{ ...fieldStyle, width: "auto", marginTop: "1rem", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
               {loading && !pendingAction ? "Preparing draft…" : hasDraft || reply.trim() ? "Generate New Response" : "Generate Response"}
             </button>
             <div style={{ marginTop: "0.6rem" }}>
@@ -389,7 +402,7 @@ export default function WorkSpace() {
             {activePanel ? (
               <>
                 {!reply.trim() ? <p>Generate a response first, then use this action to update it.</p> : null}
-                <button type="button" onClick={() => applyDraftAction(activePanel)} disabled={loading || !reply.trim() || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>
+                <button type="button" onClick={() => applyDraftAction(activePanel)} disabled={loading || !reply.trim() || !message.trim() || !unlocked} title={unlocked ? undefined : "Ask an administrator to unlock the pilot in Access."} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>
                   {pendingAction === activePanel ? "Working…" : `Generate ${activePanel === "populate_client_profile" ? "Client Profile" : draftActions.find(({ id }) => id === activePanel)?.label}`}
                 </button>
               </>

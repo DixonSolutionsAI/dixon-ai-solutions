@@ -30,7 +30,7 @@ test("parseDraftRequest validates required fields and lengths", () => {
   assert.equal(valid.message, "hello there");
   assert.equal(valid.supportContext, "Some policy context");
 
-  assert.throws(() => parseDraftRequest(JSON.stringify({ message: "hello" })), /Enter a valid pilot access code/i);
+  assert.equal(parseDraftRequest(JSON.stringify({ message: "hello" })).message, "hello");
 
   const oversizedMessage = "x".repeat(5001);
   assert.throws(

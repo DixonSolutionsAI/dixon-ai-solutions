@@ -4,12 +4,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import WorkSpace from "../work-space";
 import { AccessProvider } from "./access-context";
+import { StaffProvider, useStaff } from "./staff-context";
 
 const tabs = [
+  { href: "/get-started/employee", label: "Employee" },
   { href: "/get-started", label: "Work Space" },
   { href: "/get-started/company-documents", label: "Company Documents" },
   { href: "/get-started/access", label: "Access" },
 ];
+
+function PersistentWorkSpace({ hidden }) {
+  const { employee } = useStaff();
+  return (
+    <div hidden={hidden}>
+      <WorkSpace key={employee?.employeeId || "none"} />
+    </div>
+  );
+}
 
 export default function GetStartedLayout({ children }) {
   const pathname = usePathname();
@@ -22,6 +33,7 @@ export default function GetStartedLayout({ children }) {
 
   return (
     <AccessProvider>
+      <StaffProvider>
       <nav
         aria-label="Get Started"
         style={{
@@ -59,10 +71,9 @@ export default function GetStartedLayout({ children }) {
           );
         })}
       </nav>
-      <div hidden={!isWorkSpace}>
-        <WorkSpace />
-      </div>
+      <PersistentWorkSpace hidden={!isWorkSpace} />
       {children}
+      </StaffProvider>
     </AccessProvider>
   );
 }

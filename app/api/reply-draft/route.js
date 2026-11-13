@@ -5,6 +5,7 @@ const {
   getRateLimitResponse,
   parseDraftRequest,
 } = require("../../../lib/pilot-config");
+const { codesMatch, isValidSession, readSessionCookie } = require("../../../lib/pilot-session");
 const MAX_BODY_BYTES = 320_000;
 const ACTION_INSTRUCTIONS = {
   apply_policy: "Revise the current draft to follow only the confirmed policy details supplied. Do not invent policy. If required policy details are missing, say what the human agent must verify.",
@@ -46,9 +47,10 @@ async function POST(request) {
       return NextResponse.json({ error: error.message }, { status: error.status || 400 });
     }
 
-    const { accessCode, message, supportContext = "", action, currentDraft = "", companyPolicy, companyGuidelines } = body;
-    if (typeof accessCode !== "string" || !accessCode.trim() || accessCode.length > 256) {
-      return NextResponse.json({ error: "Enter a valid pilot access code." }, { status: 401 });
+    const { accessCode = "", message, supportContext = "", action, currentDraft = "", companyPolicy, companyGuidelines } = body;
+    const hasSession = isValidSession(readSessionCookie(request));
+    if (!hasSession && (typeof accessCode !== "string" || !accessCode.trim() || accessCode.length > 256)) {
+      return NextResponse.json({ error: "The pilot is locked. Ask an administrator to unlock it in Access." }, { status: 401 });
     }
     if (typeof message !== "string" || !message.trim()) {
       return NextResponse.json({ error: "A customer message is required." }, { status: 400 });
@@ -65,8 +67,7 @@ async function POST(request) {
       );
     }
 
-    const configuredAccessCode = process.env.PILOT_ACCESS_CODE;
-    if (accessCode !== configuredAccessCode) {
+    if (!hasSession && !codesMatch(accessCode, process.env.PILOT_ACCESS_CODE)) {
       return NextResponse.json({ error: "That pilot access code is not valid." }, { status: 401 });
     }
 
