@@ -1,13 +1,13 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { buildSessions, getAllowedEvents, getStatus, hashPassword, needsApproval, randomSalt, sessionKey, validateEmployee } from "../../lib/staff";
+import { getAllowedEvents, getStatus, hashPassword, randomSalt, reviewTimesheet, validateEmployee } from "../../lib/staff";
 
 const StaffContext = createContext(null);
 const EMPLOYEES_KEY = "staff.employees";
 const LOGS_KEY = "staff.timelogs";
 const SESSION_KEY = "staff.session";
-const APPROVALS_KEY = "staff.timeApprovals";
+const APPROVALS_KEY = "staff.timesheetApprovals";
 
 function read(storage, key, fallback) {
   try {
@@ -16,6 +16,19 @@ function read(storage, key, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function readForApproval(key) {
+  const value = localStorage.getItem(key);
+  if (value === null) return [];
+  let parsed;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new Error("Stored timesheet data cannot be read. Approval was not saved.");
+  }
+  if (!Array.isArray(parsed)) throw new Error("Stored timesheet data is invalid. Approval was not saved.");
+  return parsed;
 }
 
 export function StaffProvider({ children }) {
@@ -89,22 +102,26 @@ export function StaffProvider({ children }) {
     setEvents(next);
   }, [events, employeeId]);
 
-  const approveSession = useCallback((id, key) => {
-    const session = buildSessions(events.filter((event) => event.employeeId === id))
-      .find((item) => sessionKey(id, item) === key);
-    if (!session || !session.end || !needsApproval(session)) throw new Error("This session is not ready for approval.");
-    if (approvals.some((item) => item.key === key)) throw new Error("This session has already been approved.");
-    const next = [...approvals, { key, at: new Date().toISOString() }];
+  const approveTimesheet = useCallback((id, day, reviewedSignature) => {
+    const currentEvents = readForApproval(LOGS_KEY);
+    const review = reviewTimesheet(currentEvents.filter((event) => event.employeeId === id), day);
+    if (review.signature !== reviewedSignature) {
+      setEvents(currentEvents);
+      throw new Error("This timesheet changed. Review it again before approving.");
+    }
+    if (!review.canApprove) throw new Error("This timesheet has no completed sessions or includes a session still in progress.");
+    const saved = readForApproval(APPROVALS_KEY);
+    const next = [...saved.filter((item) => item.employeeId !== id || item.day !== day), { employeeId: id, day, signature: review.signature, at: new Date().toISOString() }];
     localStorage.setItem(APPROVALS_KEY, JSON.stringify(next));
     setApprovals(next);
-  }, [events, approvals]);
+  }, []);
 
   const employee = employees.find((item) => item.employeeId === employeeId) || null;
   const myEvents = useMemo(() => events.filter((event) => event.employeeId === employeeId), [events, employeeId]);
   const status = employee ? getStatus(myEvents) : "out";
 
   return (
-    <StaffContext.Provider value={{ ready, employees, employee, events, myEvents, approvals, status, hire, removeEmployee, setPassword, signIn, signOut, record, approveSession }}>
+    <StaffContext.Provider value={{ ready, employees, employee, events, myEvents, approvals, status, hire, removeEmployee, setPassword, signIn, signOut, record, approveTimesheet }}>
       {children}
     </StaffContext.Provider>
   );

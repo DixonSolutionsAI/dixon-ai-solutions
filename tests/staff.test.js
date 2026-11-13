@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { buildSessions, getAllowedEvents, getStatus, needsApproval, summarizeDay, formatDuration, validateEmployee } = require("../lib/staff");
+const { buildSessions, dateKey, getAllowedEvents, getStatus, needsApproval, periodBounds, reviewTimesheet, summarizeDay, formatDuration, validateEmployee, workedInPeriod } = require("../lib/staff");
 
 const at = (time) => `2026-01-05T${time}:00.000Z`;
 const ev = (type, time) => ({ type, at: at(time) });
@@ -57,4 +57,41 @@ test("splits sessions at local midnight without losing prior-day state", () => {
   assert.equal(summarizeDay(events, end, "2026-01-06").workedMs, 30 * 60000);
   assert.equal(buildSessions(events)[0].durationMs, 60 * 60000);
   assert.equal(summarizeDay(events, end, "").workedMs, 0);
+});
+
+test("daily review requires closed sessions and becomes stale when the day changes", () => {
+  const start = new Date(2026, 0, 5, 23, 30);
+  const end = new Date(2026, 0, 6, 0, 30);
+  const open = [{ type: "clock_in", at: start.toISOString() }];
+  assert.equal(reviewTimesheet([], "2026-01-05", end).canApprove, false);
+  assert.equal(reviewTimesheet(open, "2026-01-05", end).canApprove, false);
+  assert.equal(reviewTimesheet(open, "2026-01-06", end).canApprove, false);
+  const closed = [...open, { type: "clock_out", at: end.toISOString() }];
+  const review = reviewTimesheet(closed, "2026-01-05", end);
+  assert.equal(review.canApprove, true);
+  assert.equal(reviewTimesheet(closed, "2026-01-06", end).canApprove, true);
+  const changed = [...closed, { type: "clock_in", at: new Date(2026, 0, 5, 22).toISOString() }];
+  assert.notEqual(reviewTimesheet(changed, "2026-01-05", end).signature, review.signature);
+  assert.equal(reviewTimesheet(closed, "2026-02-31", end).canApprove, false);
+});
+
+test("period boundaries use calendar weeks, anchored fortnights and months", () => {
+  const keys = (day, period) => periodBounds(day, period).map(dateKey);
+  assert.deepEqual(keys("2026-01-11", "weekly"), ["2026-01-05", "2026-01-12"]);
+  assert.deepEqual(keys("2026-01-18", "biweekly"), ["2026-01-05", "2026-01-19"]);
+  assert.deepEqual(keys("2026-01-04", "biweekly"), ["2025-12-22", "2026-01-05"]);
+  assert.deepEqual(keys("2026-02-28", "monthly"), ["2026-02-01", "2026-03-01"]);
+  assert.equal(periodBounds("", "weekly"), null);
+});
+
+test("period totals clip cross-boundary sessions and exclude breaks", () => {
+  const evLocal = (type, year, month, day, hour, minute) => ({ type, at: new Date(year, month - 1, day, hour, minute).toISOString() });
+  const events = [
+    evLocal("clock_in", 2026, 1, 4, 23, 30),
+    evLocal("break_30_start", 2026, 1, 5, 0, 30),
+    evLocal("break_30_end", 2026, 1, 5, 1, 0),
+    evLocal("cue_start", 2026, 1, 5, 1, 30),
+    evLocal("clock_out", 2026, 1, 5, 2, 0),
+  ];
+  assert.equal(workedInPeriod(events, ...periodBounds("2026-01-05", "weekly")), 90 * 60000);
 });

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAccess } from "../access-context";
 import { useStaff } from "../staff-context";
-import { KIND_LABELS, buildSessions, dateKey, formatDuration, needsApproval, sessionKey, summarizeDay } from "../../../lib/staff";
+import { KIND_LABELS, buildSessions, dateKey, formatDuration, needsApproval, periodBounds, reviewTimesheet, summarizeDay, workedInPeriod } from "../../../lib/staff";
 
 const card = { maxWidth: "900px", margin: "0 auto 1rem", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "16px", padding: "1.25rem" };
 const field = { width: "100%", borderRadius: "12px", border: "1px solid #334155", background: "#020617", color: "white", padding: "0.8rem 1rem", fontSize: "1rem", boxSizing: "border-box" };
@@ -125,12 +125,15 @@ function EmployeeHire() {
 
 function StaffVault() {
   const { unlocked } = useAccess();
-  const { employees, events, approvals, approveSession } = useStaff();
+  const { employees, events, approvals, approveTimesheet } = useStaff();
   const [view, setView] = useState("storage");
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [date, setDate] = useState(() => dateKey(new Date()));
+  const [periodDate, setPeriodDate] = useState(() => dateKey(new Date()));
+  const [periods, setPeriods] = useState({});
   const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(timer);
@@ -138,18 +141,29 @@ function StaffVault() {
   const employeeId = employees.some((employee) => employee.employeeId === selectedEmployee) ? selectedEmployee : employees[0]?.employeeId || "";
   const mine = events.filter((event) => event.employeeId === employeeId);
   const summary = summarizeDay(mine, now, date);
+  const review = reviewTimesheet(mine, date, now);
+  const approval = approvals.find((item) => item.employeeId === employeeId && item.day === date && item.signature === review.signature);
   const flagged = employees.flatMap((employee) => buildSessions(events.filter((event) => event.employeeId === employee.employeeId), now)
     .filter(needsApproval)
-    .map((session) => ({ employee, session, key: sessionKey(employee.employeeId, session) })));
-  const pending = flagged.filter(({ key }) => !approvals.some((approval) => approval.key === key));
+    .map((session) => ({ employee, session })));
 
-  function approve(id, key) {
+  function approve() {
     try {
-      approveSession(id, key);
+      approveTimesheet(employeeId, date, review.signature);
       setError("");
+      setNotice("Timesheet approved in this browser.");
     } catch (err) {
       setError(err.message);
+      setNotice("");
     }
+  }
+
+  function selectTimesheet(id, day, scroll = false) {
+    setSelectedEmployee(id);
+    setDate(day);
+    setError("");
+    setNotice("");
+    if (scroll) document.getElementById("daily-timesheet-heading")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (
@@ -158,7 +172,7 @@ function StaffVault() {
       <p>Records and approvals are stored only in this browser. They are not shared across devices and can be altered by anyone with access to the browser; this is not a secure payroll record.</p>
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
         <button type="button" style={button} aria-pressed={view === "storage"} onClick={() => setView("storage")}>Storage</button>
-        <button type="button" style={button} aria-pressed={view === "timesheets"} onClick={() => setView("timesheets")}>Employee timesheets{unlocked && pending.length ? ` (${pending.length} awaiting review)` : ""}</button>
+        <button type="button" style={button} aria-pressed={view === "timesheets"} onClick={() => setView("timesheets")}>Employee timesheets</button>
       </div>
       {view === "storage" ? <>
       <p>Choose where employee records, time logs and onboarding documents should be stored. Connecting is not available yet.</p>
@@ -175,30 +189,71 @@ function StaffVault() {
         <button type="button" disabled title="Not yet implemented" style={{ ...button, cursor: "not-allowed", opacity: 0.6 }}>Connect (coming soon)</button>
       </div>
       </> : !unlocked ? <p>Unlock the pilot to view timesheets and review sessions.</p> : <>
-        <h3>Sessions requiring supervisor review</h3>
-        <p>More than 30 minutes for a 30 minute break, or more than one hour for any other session, requires approval. Open sessions can be approved after they end. Reviews cover all recorded dates; no pay period is configured.</p>
+        <h3>Over-limit sessions</h3>
+        <p>More than 30 minutes for a 30 minute break, or more than one hour for any other session, is flagged. Every daily timesheet requires supervisor review, including those without flagged sessions.</p>
         {error ? <p role="alert" style={{ color: "#fca5a5" }}>{error}</p> : null}
-        {pending.length ? <ul>{pending.map(({ employee, session, key }) => (
-          <li key={key} style={{ marginBottom: "0.75rem" }}>
+        {notice ? <p role="status" style={{ color: "#86efac" }}>{notice}</p> : null}
+        {flagged.length ? <ul>{flagged.map(({ employee, session }) => (
+          <li key={`${employee.employeeId}-${session.start}`} style={{ marginBottom: "0.75rem" }}>
             {employee.name} · {employee.employeeId} · {KIND_LABELS[session.kind]} · {new Date(session.start).toLocaleString()} · {formatDuration(session.durationMs)}{session.end ? "" : " (in progress)"}{" "}
-            <button type="button" style={button} disabled={!session.end} onClick={() => approve(employee.employeeId, key)}>Approve</button>
+            <button type="button" style={button} onClick={() => selectTimesheet(employee.employeeId, dateKey(session.start), true)}>Review timesheet</button>
           </li>
-        ))}</ul> : <p>No sessions currently require review.</p>}
-        <h3>Employee daily timesheet</h3>
+        ))}</ul> : <p>No over-limit sessions recorded.</p>}
+        <h3 id="daily-timesheet-heading">Employee daily timesheet</h3>
         {employees.length ? <>
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
             <label style={label}>Employee
-              <select style={field} value={employeeId} onChange={(event) => setSelectedEmployee(event.target.value)}>
+              <select style={field} value={employeeId} onChange={(event) => selectTimesheet(event.target.value, date)}>
                 {employees.map((employee) => <option key={employee.employeeId} value={employee.employeeId}>{employee.name} · {employee.employeeId}</option>)}
               </select>
             </label>
-            <label style={label}>Date<input style={field} type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
+            <label style={label}>Date<input style={field} type="date" value={date} onChange={(event) => selectTimesheet(employeeId, event.target.value)} /></label>
           </div>
           <p>Worked: {formatDuration(summary.workedMs)} · Lunch: {formatDuration(summary.lunchMs)} · Break: {formatDuration(summary.breakMs)}</p>
           {summary.sessions.length ? <ul>{summary.sessions.map((session) => <li key={session.start}>{KIND_LABELS[session.kind]} · {new Date(session.start).toLocaleTimeString()} – {session.end ? new Date(session.end).toLocaleTimeString() : "now"} · {formatDuration(session.durationMs)}</li>)}</ul> : <p>No sessions recorded for this date.</p>}
-          <h4>Approved sessions</h4>
-          {flagged.filter(({ employee, key, session }) => employee.employeeId === employeeId && dateKey(session.start) === date && approvals.some((approval) => approval.key === key)).map(({ session, key }) => <p key={key}>{KIND_LABELS[session.kind]} · {new Date(session.start).toLocaleString()} · {formatDuration(session.durationMs)} · Approved in this browser</p>)}
+          <p>Timesheet status: <strong>{approval ? `Approved ${new Date(approval.at).toLocaleString()}` : review.sessions.length ? "Awaiting supervisor approval" : "No recorded sessions"}</strong></p>
+          <p>Review the sessions above, then approve. Sessions still in progress must end first. A changed timesheet requires a new approval.</p>
+          <button type="button" style={button} disabled={!review.canApprove || Boolean(approval)} onClick={approve}>Approve reviewed timesheet</button>
         </> : <p>No employees in this browser.</p>}
+        <h3>All employee hours</h3>
+        <p>Worked time includes Cue Time and Meeting, but excludes lunch and breaks. Totals include unapproved and in-progress time. Weeks run Monday–Sunday; biweekly periods begin January 5, 2026. Monthly totals use calendar months.</p>
+        <label style={label}>Period containing date<input type="date" style={field} value={periodDate} onChange={(event) => setPeriodDate(event.target.value)} /></label>
+        {employees.length ? <ul style={{ paddingLeft: "1.25rem" }}>{employees.map((employee) => {
+          const period = periods[employee.employeeId] || "weekly";
+          const bounds = periodBounds(periodDate, period);
+          const employeeEvents = events.filter((event) => event.employeeId === employee.employeeId);
+          const lastDay = bounds ? new Date(bounds[1].getFullYear(), bounds[1].getMonth(), bounds[1].getDate() - 1) : null;
+          const days = [];
+          if (bounds) {
+            for (const cursor = new Date(bounds[0]); cursor < bounds[1]; cursor.setDate(cursor.getDate() + 1)) {
+              const day = dateKey(cursor);
+              const dayReview = reviewTimesheet(employeeEvents, day, now);
+              if (!dayReview.sessions.length) continue;
+              const approved = approvals.some((item) => item.employeeId === employee.employeeId && item.day === day && item.signature === dayReview.signature);
+              days.push({ day, approved });
+            }
+          }
+          return <li key={employee.employeeId} style={{ margin: "1rem 0" }}>
+            <strong>{employee.name}</strong> · {employee.employeeId}
+            <label style={label}>Period for {employee.name}
+              <select style={field} value={period} onChange={(event) => setPeriods({ ...periods, [employee.employeeId]: event.target.value })}>
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Biweekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </label>
+            {bounds ? <p>{dateKey(bounds[0])} – {dateKey(lastDay)}: <strong>{formatDuration(workedInPeriod(employeeEvents, ...bounds, now))}</strong></p> : <p>Select a valid period date.</p>}
+            <details>
+              <summary>Daily timesheets ({days.filter((day) => !day.approved).length} awaiting approval)</summary>
+              {days.length ? <ul>{days.map(({ day, approved }) => <li key={day} style={{ margin: "0.5rem 0" }}>{day} · {approved ? "Approved" : "Awaiting approval"}{" "}
+                <button type="button" style={button} onClick={() => selectTimesheet(employee.employeeId, day, true)}>Review {employee.name} · {day}</button>
+              </li>)}</ul> : <p>No recorded sessions in this period.</p>}
+            </details>
+          </li>;
+        })}</ul> : <p>No employees in this browser.</p>}
+        <h3>Invoice and payment connections</h3>
+        <p>QuickBooks and other invoice or payment connections are not available yet. No timesheets or payments are sent.</p>
+        <button type="button" disabled title="Not yet implemented" style={{ ...button, cursor: "not-allowed", opacity: 0.6 }}>Connect QuickBooks or payment provider (coming soon)</button>
       </>}
     </section>
   );
