@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { getDocuments } from "./browser-documents";
 import { useAccess } from "./get-started/access-context";
 import { createMailtoUrl, readTemplates, saveTemplate, deleteTemplate } from "../lib/response-workflow";
@@ -26,12 +27,18 @@ const cardStyle = {
 };
 
 const draftActions = [
-  { id: "email_structure", label: "Email Response" },
-  { id: "text_message", label: "Text Response" },
-  { id: "call_prompts", label: "Call Response" },
+  { id: "email_structure", label: "Email Response", path: "email" },
+  { id: "text_message", label: "Text Response", path: "text" },
+  { id: "call_prompts", label: "Call Response", path: "call" },
 ];
 
 export default function WorkSpace() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const actionPath = pathname.startsWith("/get-started/work-space/") ? pathname.split("/").pop() : "";
+  const activePanel = actionPath === "profile"
+    ? "populate_client_profile"
+    : draftActions.find(({ path }) => path === actionPath)?.id;
   const { accessCode } = useAccess();
   const [message, setMessage] = useState("");
   const [reply, setReply] = useState("");
@@ -41,7 +48,6 @@ export default function WorkSpace() {
   const [currentAction, setCurrentAction] = useState("generate");
   const [pendingAction, setPendingAction] = useState("");
   const [accepted, setAccepted] = useState(false);
-  const [activePanel, setActivePanel] = useState("generate");
   const [hasDraft, setHasDraft] = useState(false);
   const [suggestion, setSuggestion] = useState(null);
   const [emailTo, setEmailTo] = useState("");
@@ -53,13 +59,12 @@ export default function WorkSpace() {
   const [templateError, setTemplateError] = useState("");
   const [approvalError, setApprovalError] = useState("");
   const [approvalStatus, setApprovalStatus] = useState("");
-  const panelRef = useRef(null);
   const profileDialogRef = useRef(null);
   const approvalDialogRef = useRef(null);
 
   useEffect(() => {
-    if (activePanel !== "generate" && panelRef.current) {
-      panelRef.current.focus();
+    if (activePanel) {
+      setAccepted(false);
     }
   }, [activePanel]);
 
@@ -219,20 +224,24 @@ export default function WorkSpace() {
         <p style={{ color: "#7dd3fc", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: "0.8rem", fontWeight: 700 }}>
           InstantReply · private pilot prototype
         </p>
-        <h1 style={{ fontSize: "2rem", marginBottom: "0.8rem" }}>Work Space</h1>
+        <h1 style={{ fontSize: "2rem", marginBottom: "0.8rem" }}>
+          {activePanel === "populate_client_profile" ? "Populate Client Profile" : draftActions.find(({ id }) => id === activePanel)?.label || "Work Space"}
+        </h1>
+        {activePanel ? <Link href="/get-started" style={{ color: "#7dd3fc" }}>← Back to Work Space</Link> : null}
         <section aria-labelledby="actions-heading" style={{ ...cardStyle, margin: "1.5rem 0" }}>
           <h2 id="actions-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Response actions</h2>
-          <p>Enter your pilot code in <Link href="/get-started/access" style={{ color: "#7dd3fc" }}>Access</Link> and the customer inquiry to generate a response. Review it before using the other actions.</p>
+          <p>Choose an action to open its workspace. Enter your pilot code in <Link href="/get-started/access" style={{ color: "#7dd3fc" }}>Access</Link> before generating a response.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-            {draftActions.map(({ id, label }) => (
-              <button key={id} type="button" onClick={() => { setActivePanel(id); setAccepted(false); }} disabled={loading} aria-pressed={activePanel === id} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
+            {draftActions.map(({ id, label, path }) => (
+              <Link key={id} href={`/get-started/work-space/${path}`} onClick={(event) => { if (loading) event.preventDefault(); }} aria-current={activePanel === id ? "page" : undefined} aria-disabled={loading || undefined} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700, textDecoration: "none", borderColor: activePanel === id ? "#7dd3fc" : "#334155" }}>
                 {label}
-              </button>
+              </Link>
             ))}
           </div>
-          <p style={{ color: "#cbd5e1", marginBottom: 0 }}>Choose an action to open its editor.</p>
         </section>
 
+        {activePanel ? (
+        <>
         <aside role="note" style={{ ...cardStyle, margin: "1.5rem 0", borderColor: "#854d0e", color: "#fef3c7" }}>
           <strong>Prototype safety:</strong> Use fictional or redacted examples only. Do not enter real customer personal, payment, health, or account information. Responses must be checked before use.
         </aside>
@@ -271,7 +280,7 @@ export default function WorkSpace() {
           </div>
           <p>A future Supabase integration will require individual sign-in and company-level access controls. Creating a database alone will not connect it.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-            <button type="button" onClick={() => { profileDialogRef.current.close(); setActivePanel("populate_client_profile"); setAccepted(false); panelRef.current?.focus(); }} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Draft profile summary</button>
+            <button type="button" onClick={() => { profileDialogRef.current.close(); router.push("/get-started/work-space/profile"); }} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Draft profile summary</button>
             <button type="button" autoFocus onClick={() => profileDialogRef.current.close()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Close</button>
           </div>
           <p>Drafting creates an editable summary from the inquiry; it does not open or save a customer record.</p>
@@ -283,7 +292,7 @@ export default function WorkSpace() {
           </p>
         ) : null}
 
-          <section ref={panelRef} tabIndex={-1} aria-labelledby="draft-heading" style={{ ...cardStyle, marginTop: "2rem" }}>
+          <section aria-labelledby="draft-heading" style={{ ...cardStyle, marginTop: "2rem" }}>
             <h2 id="draft-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>
               {activePanel === "populate_client_profile"
                   ? "Populate Client Profile"
@@ -377,7 +386,7 @@ export default function WorkSpace() {
             <p style={{ color: "#fef3c7", marginBottom: "1rem" }}>
               Human review is required. Verify every factual statement and policy detail.
             </p>
-            {activePanel !== "generate" ? (
+            {activePanel ? (
               <>
                 {!reply.trim() ? <p>Generate a response first, then use this action to update it.</p> : null}
                 <button type="button" onClick={() => applyDraftAction(activePanel)} disabled={loading || !reply.trim() || !message.trim() || !accessCode.trim()} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>
@@ -446,6 +455,8 @@ export default function WorkSpace() {
               <button type="button" autoFocus onClick={() => approvalDialogRef.current.close()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Cancel</button>
             </div>
           </dialog>
+        </>
+        ) : null}
       </div>
     </main>
   );

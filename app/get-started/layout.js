@@ -13,6 +13,12 @@ const tabs = [
 
 export default function GetStartedLayout({ children }) {
   const pathname = usePathname();
+  const isWorkSpace = pathname === "/get-started" || [
+    "/get-started/work-space/email",
+    "/get-started/work-space/text",
+    "/get-started/work-space/call",
+    "/get-started/work-space/profile",
+  ].includes(pathname);
 
   return (
     <AccessProvider>
@@ -29,7 +35,7 @@ export default function GetStartedLayout({ children }) {
         }}
       >
         {tabs.map(({ href, label }) => {
-          const isActive = pathname === href;
+          const isActive = href === "/get-started" ? isWorkSpace : pathname === href;
           return (
             <Link
               key={href}
@@ -53,7 +59,7 @@ export default function GetStartedLayout({ children }) {
           );
         })}
       </nav>
-      <div hidden={pathname !== "/get-started"}>
+      <div hidden={!isWorkSpace}>
         <WorkSpace />
       </div>
       {children}

@@ -14,6 +14,8 @@ Redeploy the Preview deployment after setting variables. Do not enable the AI ke
 
 Enter the pilot code in Get Started > Access, then return to Work Space to draft responses. The code and the current workspace draft are kept in memory while switching between Get Started tabs; reloading or leaving this area clears them. The code is not validated until a draft request is submitted.
 
+Choose Email, Text, or Call Response in Work Space to open its editor. Enter the customer inquiry there; the same inquiry and draft remain available when switching response actions. Each editor can generate an initial draft and then format it for the selected action.
+
 ## Policy and guidelines in this browser
 
 Use the Company Documents navigation tab to upload one policy and one guidelines file as non-empty UTF-8 `.txt` or text-based `.pdf` files. Text, including text extracted from PDFs, must be at most 16,000 bytes per document; PDFs must also be at most 10 MB. Scanned PDFs need OCR before uploading. PDF text is extracted locally in the browser; formatting and images are not retained. Uploading replaces the corresponding document, and download retrieves its stored text as a `.txt` file, not the original PDF. No Google Drive setup or owner password is required.
