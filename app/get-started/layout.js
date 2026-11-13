@@ -47,7 +47,7 @@ export default function GetStartedLayout({ children }) {
         }}
       >
         {tabs.map(({ href, label }) => {
-          const isActive = href === "/get-started" ? isWorkSpace : pathname === href;
+          const isActive = href === "/get-started" ? isWorkSpace : pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
               key={href}

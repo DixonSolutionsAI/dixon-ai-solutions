@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { documentKeys, getDocuments } from "./browser-documents";
 import { readDocument } from "./document-upload.mjs";
+import ProjectOfficeTemplates from "./project-office-templates";
 
 const buttonStyle = {
   borderRadius: "12px",
@@ -15,7 +17,7 @@ const buttonStyle = {
   fontWeight: 700,
 };
 
-export default function CompanyDocuments() {
+export default function CompanyDocuments({ showTemplates = false }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -84,6 +86,17 @@ export default function CompanyDocuments() {
     <main style={{ minHeight: "100vh", padding: "40px 20px 64px" }}>
       <section aria-labelledby="documents-heading" style={{ maxWidth: "900px", margin: "0 auto", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "16px", padding: "1.25rem" }}>
         <h1 id="documents-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Company documents</h1>
+        <nav aria-label="Company documents sections" style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.5rem" }}>
+          {[
+            { href: "/get-started/company-documents", label: "Policy & Guidelines", active: !showTemplates },
+            { href: "/get-started/company-documents/project-office-templates", label: "Project Office Templates", active: showTemplates },
+          ].map(({ href, label, active }) => (
+            <Link key={href} href={href} aria-current={active ? "page" : undefined} style={{ ...buttonStyle, textDecoration: "none", color: active ? "#7dd3fc" : "#cbd5e1", borderColor: active ? "#7dd3fc" : "#334155" }}>
+              {label}
+            </Link>
+          ))}
+        </nav>
+        {showTemplates ? <ProjectOfficeTemplates /> : <>
         <p>Upload UTF-8 .txt or text-based .pdf files. Text must be at most 16,000 bytes; PDF files must be at most 10 MB. Scanned PDFs require OCR first. PDF text is extracted in your browser and downloads as .txt. Text is stored only in this browser, not shared with other users or devices. Anyone using this browser can read or replace it; clearing site data removes it. Document text is sent to OpenAI when generating a response.</p>
         {status ? <p>Policy: {status.policy ? "uploaded" : "not uploaded"} · Guidelines: {status.guidelines ? "uploaded" : "not uploaded"}</p> : null}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
@@ -97,6 +110,7 @@ export default function CompanyDocuments() {
         {busy ? <p role="status">Processing document...</p> : null}
         {message ? <p role="status">{message}</p> : null}
         {error ? <p role="alert" style={{ color: "#fca5a5" }}>{error}</p> : null}
+        </>}
       </section>
     </main>
   );

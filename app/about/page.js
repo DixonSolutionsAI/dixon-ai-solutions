@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "About OfficeVault AI | Human-Controlled Support AI",
+  title: "About OfficeVault AI | AI Office Workspace",
   description:
-    "OfficeVault AI helps support teams reduce repetitive reply work with context-aware drafts, human review, and workflows designed for real customer conversations.",
+    "Explore OfficeVault AI's human-reviewed response drafting, reusable templates, and vision for a connected AI office workspace.",
 };
 
 const sectionStyle = { marginTop: "3rem" };
@@ -39,15 +39,69 @@ export default function AboutPage() {
         </p>
 
         <h1 style={{ fontSize: "clamp(2.3rem, 4vw, 4rem)", lineHeight: 1.1 }}>
-          AI that helps your support team reply faster—without taking the human out of support.
+          An AI office workspace built around people, projects, and better responses.
         </h1>
 
         <p style={{ fontSize: "1.15rem", color: "#dfe7f5", maxWidth: "820px" }}>
-          OfficeVault AI was built for one purpose: to make the next customer reply
-          easier to write, easier to send, and easier to trust. It gives support teams a
-          context-aware draft based on the conversation, the customer history, and the
-          workflow in front of them—so the team can move faster without losing judgment.
+          OfficeVault AI brings AI-assisted response drafting and reusable resources together
+          with human oversight. The current pilot helps teams prepare responses using an inquiry
+          and optional company policies and guidelines, while keeping review and editing in
+          the hands of the person doing the work.
         </p>
+
+        <section style={sectionStyle}>
+          <h2>What the workspace offers</h2>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "1rem",
+              marginTop: "1.25rem",
+            }}
+          >
+            <article style={cardStyle}>
+              <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>AI drafts, human decisions</h3>
+              <p style={{ marginBottom: 0 }}>
+                Generate and edit email, text, and call response drafts, then review and approve
+                them yourself. The agent does not send messages or make calls: approved emails
+                open in your default email app for you to review and send.
+              </p>
+            </article>
+            <article style={cardStyle}>
+              <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Reusable responses</h3>
+              <p style={{ marginBottom: 0 }}>
+                Save approved text and call responses as named templates for manual reuse.
+                These templates are stored only in the current browser and are not shared
+                across devices.
+              </p>
+            </article>
+            <article style={cardStyle}>
+              <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Company documents</h3>
+              <p style={{ marginBottom: 0 }}>
+                Upload company policy and guidelines as text or text-based PDF files to provide
+                context for drafts. Document text is stored in this browser and sent to OpenAI
+                when generating responses; use fictional or redacted information in the pilot.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section style={sectionStyle}>
+          <h2>The connected office vision</h2>
+          <p>
+            The broader vision includes a Project Office Library with prepared business and
+            project templates, giving teams a starting point for everyday work. The current
+            pilot supports saved response templates and lets you upload your own project
+            templates in Company Documents; a prepared project template library is not yet
+            available.
+          </p>
+          <p>
+            We also envision easier connections to tools and information teams already use,
+            such as Microsoft 365, Excel spreadsheets and templates, and customer file
+            databases. These integrations are not currently implemented, and customer records
+            cannot yet be searched or stored through the workspace.
+          </p>
+        </section>
 
         <section style={sectionStyle}>
           <h2>Why support teams need a better starting point</h2>
@@ -79,28 +133,29 @@ export default function AboutPage() {
               <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Draft first. Human decides.</h3>
               <p style={{ marginBottom: 0 }}>
                 AI should accelerate the work, not take it out of the team&apos;s hands. Every
-                workflow keeps review and approval in the loop wherever your team needs it.
+                pilot keeps review, editing, and approval in the hands of your team.
               </p>
             </article>
             <article style={cardStyle}>
               <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Context before cleverness.</h3>
               <p style={{ marginBottom: 0 }}>
                 A fast answer is only useful if it reflects the situation. OfficeVault AI uses
-                customer history and conversation context to help shape a more informed draft.
+                the inquiry and any uploaded company policy and guidelines to help shape a
+                more informed draft.
               </p>
             </article>
             <article style={cardStyle}>
-              <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Enhance the stack you already use.</h3>
+              <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Designed for connected work.</h3>
               <p style={{ marginBottom: 0 }}>
-                Rather than forcing teams into a new support system, we fit into the tools and
-                workflows they already rely on, including Zendesk and Intercom.
+                The vision is to connect office tools and customer information to the workspace.
+                Those connections are not yet available in the pilot.
               </p>
             </article>
             <article style={cardStyle}>
               <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Outcomes over hype.</h3>
               <p style={{ marginBottom: 0 }}>
-                We measure value by the real outcomes support teams care about: response time,
-                consistency, customer experience, and the amount of repetitive work removed.
+                We focus on the outcomes teams care about: response time, consistency, customer
+                experience, and reducing repetitive work.
               </p>
             </article>
           </div>
@@ -131,8 +186,8 @@ export default function AboutPage() {
             without making them less accountable.
           </p>
           <p>
-            The goal is simple: deliver a more useful reply, reduce repetitive work, and give
-            support teams a tool they can trust in everyday execution.
+            The pilot has not been validated for production customer data. Use fictional or
+            redacted cases and review each draft before using it.
           </p>
         </section>
 

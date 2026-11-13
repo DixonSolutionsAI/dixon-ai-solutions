@@ -29,6 +29,10 @@ Use the Company Documents navigation tab to upload one policy and one guidelines
 
 The files are stored in browser site storage, not shared across browsers or devices. Anyone with access to this browser or its site data can read, replace, or download them; clearing site data removes them. Each draft and action sends their contents to the server and OpenAI. Use fictional or redacted content only, review provider retention, and do not upload confidential or sensitive documents. If site storage is blocked, drafting reports an error instead of silently omitting saved documents.
 
+## Project Office Templates
+
+The Company Documents tab includes a Project Office Templates section for uploading, downloading, and deleting your own files (up to 10 MB each), including Excel spreadsheets. Files are stored in the current browser's IndexedDB in their original format, are not shared across devices, and are not used in AI drafts. Anyone using the browser can access them, and clearing site data removes them. Do not upload sensitive information. The pilot does not include a prepared project template library.
+
 ## Planned connections
 
 The email editor provides To, Cc, Subject, body, and signature fields. Accepting an email opens a prefilled draft using the device's default email app; the user must review and send it there. Email-app availability and draft length depend on the device. Direct Gmail and Outlook connection and sending are not implemented; their buttons are disabled. The customer message's profile dialog offers a disabled database connection and search and can open the profile-summary drafting action, but cannot search, open, or store a customer record. Supabase sign-in, company workspace isolation, shared profile storage, and a setup assistant are not implemented. Do not enter real customer information in this prototype.
