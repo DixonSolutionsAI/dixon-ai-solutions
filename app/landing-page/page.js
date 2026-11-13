@@ -1,5 +1,7 @@
+import PricingContent from "../pricing-content";
+
 export const metadata = {
-  title: "Landing Page | OfficeVault AI",
+  title: "All-in-One | OfficeVault AI",
   description:
     "OfficeVault AI — Launch, store, and run your entire business in one workspace.",
 };
@@ -102,7 +104,7 @@ export default function LandingPage() {
             outside support required.
           </p>
           <a
-            href="/get-started/employee"
+            href="#get-started"
             style={{
               display: "inline-block",
               marginTop: "0.5rem",
@@ -170,6 +172,57 @@ export default function LandingPage() {
             ))}
           </div>
         </section>
+
+        <section id="get-started" style={{ marginTop: "3rem", scrollMarginTop: "2rem" }}>
+          <p style={eyebrow}>Get Started</p>
+          <h2 style={{ marginTop: 0 }}>Choose your next step</h2>
+          <p style={{ color: "#dfe7f5", maxWidth: "800px" }}>
+            Start using the workspace, talk with us about a demo, or review pricing—all here on
+            the All-in-One page.
+          </p>
+          <div style={grid}>
+            <article style={card}>
+              <h3 style={{ color: "#7dd3fc", marginTop: 0 }}>Start now</h3>
+              <p style={{ color: "#dfe7f5" }}>
+                Sign in or complete first-time employee setup to open the workspace.
+              </p>
+              <a href="/get-started/employee" style={{ color: "#7dd3fc", fontWeight: 700 }}>
+                Open employee access
+              </a>
+            </article>
+            <article id="demo" style={{ ...card, scrollMarginTop: "2rem" }}>
+              <h3 style={{ color: "#7dd3fc", marginTop: 0 }}>Book a demo</h3>
+              <p style={{ color: "#dfe7f5" }}>
+                Talk through your support workflow and see whether OfficeVault AI could fit your
+                team.
+              </p>
+              <a
+                href="https://calendly.com"
+                style={{ color: "#7dd3fc", fontWeight: 700 }}
+              >
+                Request a demo
+              </a>
+              <p style={{ color: "#94a3b8", marginBottom: 0 }}>
+                Or email{" "}
+                <a href="mailto:hello@instantreply.ai" style={{ color: "#7dd3fc" }}>
+                  hello@instantreply.ai
+                </a>
+                .
+              </p>
+            </article>
+            <article style={card}>
+              <h3 style={{ color: "#7dd3fc", marginTop: 0 }}>View pricing</h3>
+              <p style={{ color: "#dfe7f5" }}>
+                Compare proposed plans and common small-business software costs.
+              </p>
+              <a href="#pricing" style={{ color: "#7dd3fc", fontWeight: 700 }}>
+                Compare pricing
+              </a>
+            </article>
+          </div>
+        </section>
+
+        <PricingContent />
       </div>
     </main>
   );

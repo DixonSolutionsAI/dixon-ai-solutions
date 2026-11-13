@@ -57,6 +57,17 @@ Track a pre-agreed, representative ticket sample and compare against a baseline:
 
 Do not present pilot results as general guarantees. State the sample, period, and measurement method.
 
+## Pricing and cost-efficiency framing
+
+The website lists proposed launch prices of $19/month for Solo, $49/month for Team, and $99/month
+for Business. Treat these as provisional until billing unit, seat limits, included usage,
+supported channels, integrations, and service costs are validated.
+
+Use cost-efficiency language only for the support workflow: bringing context, policies, and draft
+preparation together may reduce handoffs or the need for separate AI drafting tools. Do not claim
+OfficeVault replaces accounting, payroll, email, payments, ecommerce, or every support platform.
+Any savings claim must identify the tools actually replaced and use a measured customer baseline.
+
 ## Claims to verify before using publicly
 
 Do not make “best,” “most accurate,” “fastest,” guaranteed ROI, autonomous-resolution, supported-channel, named integration, security, compliance, or customer-result claims unless the capability and evidence are confirmed. The current repository is a marketing site, not proof of a functioning support-agent product or integrations.
