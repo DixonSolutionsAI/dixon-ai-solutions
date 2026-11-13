@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "About InstantReply AI Agent | Human-Controlled Support AI",
+  title: "About OfficeVault AI | Human-Controlled Support AI",
   description:
-    "InstantReply AI Agent helps support teams reduce repetitive reply work with context-aware drafts, human review, and workflows designed for real customer conversations.",
+    "OfficeVault AI helps support teams reduce repetitive reply work with context-aware drafts, human review, and workflows designed for real customer conversations.",
 };
 
 const sectionStyle = { marginTop: "3rem" };
@@ -35,7 +35,7 @@ export default function AboutPage() {
             marginBottom: "1rem",
           }}
         >
-          About InstantReply
+          About OfficeVault AI
         </p>
 
         <h1 style={{ fontSize: "clamp(2.3rem, 4vw, 4rem)", lineHeight: 1.1 }}>
@@ -43,7 +43,7 @@ export default function AboutPage() {
         </h1>
 
         <p style={{ fontSize: "1.15rem", color: "#dfe7f5", maxWidth: "820px" }}>
-          InstantReply AI Agent was built for one purpose: to make the next customer reply
+          OfficeVault AI was built for one purpose: to make the next customer reply
           easier to write, easier to send, and easier to trust. It gives support teams a
           context-aware draft based on the conversation, the customer history, and the
           workflow in front of them—so the team can move faster without losing judgment.
@@ -58,7 +58,7 @@ export default function AboutPage() {
             still handling the conversations that require nuanced judgment.
           </p>
           <p>
-            InstantReply AI Agent helps solve that tension. Instead of replacing the agent,
+            OfficeVault AI helps solve that tension. Instead of replacing the agent,
             it gives the agent a clearer, more informed starting point. That means less time
             staring at a blank reply, less rework, and more energy spent on the issues that
             actually need a human touch.
@@ -85,7 +85,7 @@ export default function AboutPage() {
             <article style={cardStyle}>
               <h3 style={{ marginTop: 0, color: "#7dd3fc" }}>Context before cleverness.</h3>
               <p style={{ marginBottom: 0 }}>
-                A fast answer is only useful if it reflects the situation. InstantReply uses
+                A fast answer is only useful if it reflects the situation. OfficeVault AI uses
                 customer history and conversation context to help shape a more informed draft.
               </p>
             </article>
@@ -115,7 +115,7 @@ export default function AboutPage() {
             creating confusion, friction, or a loss of trust.
           </p>
           <p>
-            InstantReply is built with that reality in mind. It is not designed to replace
+            OfficeVault AI is built with that reality in mind. It is not designed to replace
             the support team with a bot-first experience. It is designed to help your team
             move more efficiently, handle high-volume conversations more consistently, and
             stay focused on the moments that require real human judgment.
@@ -139,7 +139,7 @@ export default function AboutPage() {
         <section style={{ ...sectionStyle, ...cardStyle }}>
           <h2 style={{ marginTop: 0 }}>Make every reply a stronger starting point.</h2>
           <p>
-            See how InstantReply AI Agent fits into your support workflow and helps your team
+            See how OfficeVault AI fits into your support workflow and helps your team
             respond with more speed, more clarity, and more confidence.
           </p>
           <a

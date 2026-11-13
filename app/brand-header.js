@@ -3,6 +3,7 @@ const links = [
   { href: "/about", label: "About" },
   { href: "/services", label: "Services" },
   { href: "/contact", label: "Contact" },
+  { href: "/landing-page", label: "Landing Page" },
 ];
 
 export default function BrandHeader() {
@@ -28,7 +29,7 @@ export default function BrandHeader() {
       >
         <a
           href="/"
-          aria-label="InstantReply AI Agent home"
+          aria-label="OfficeVault AI home"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -46,7 +47,7 @@ export default function BrandHeader() {
             <path d="m39 36 8 6-8 6" fill="none" stroke="#7dd3fc" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
           </svg>
           <span>
-            InstantReply <span style={{ color: "#7dd3fc" }}>AI Agent</span>
+            OfficeVault <span style={{ color: "#7dd3fc" }}>AI</span>
           </span>
         </a>
 

@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "Services | InstantReply AI Agent",
+  title: "Services | OfficeVault AI",
   description:
-    "Explore how InstantReply AI Agent helps support teams reduce repetitive reply work, improve response speed, and maintain human oversight across key support channels.",
+    "Explore how OfficeVault AI helps support teams reduce repetitive reply work, improve response speed, and maintain human oversight across key support channels.",
 };
 
 const sectionStyle = { marginTop: "3rem" };
@@ -43,7 +43,7 @@ export default function ServicesPage() {
         </h1>
 
         <p style={{ fontSize: "1.15rem", color: "#dfe7f5", maxWidth: "820px" }}>
-          InstantReply AI Agent helps support teams move faster by turning customer
+          OfficeVault AI helps support teams move faster by turning customer
           conversations into useful, human-reviewed reply drafts—without removing the
           judgment and accountability of the team handling the case.
         </p>
@@ -93,7 +93,7 @@ export default function ServicesPage() {
             <div style={cardStyle}>
               <strong>1. Capture the customer context</strong>
               <p style={{ marginBottom: 0 }}>
-                InstantReply looks at the active conversation and relevant support history to
+                OfficeVault AI looks at the active conversation and relevant support history to
                 understand what the customer needs.
               </p>
             </div>
@@ -137,7 +137,7 @@ export default function ServicesPage() {
         <section style={{ ...sectionStyle, ...cardStyle }}>
           <h2 style={{ marginTop: 0 }}>Ready to reduce response time without losing control?</h2>
           <p>
-            See how InstantReply AI Agent can fit into your support workflow and help your
+            See how OfficeVault AI can fit into your support workflow and help your
             team respond faster with better context.
           </p>
           <a

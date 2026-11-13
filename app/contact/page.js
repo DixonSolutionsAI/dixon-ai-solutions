@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "Contact | InstantReply AI Agent",
+  title: "Contact | OfficeVault AI",
   description:
-    "Contact InstantReply AI Agent to learn how support teams can reduce reply time, improve consistency, and keep human review in the loop.",
+    "Contact OfficeVault AI to learn how support teams can reduce reply time, improve consistency, and keep human review in the loop.",
 };
 
 const sectionStyle = { marginTop: "3rem" };
@@ -51,7 +51,7 @@ export default function ContactPage() {
         <section style={{ ...sectionStyle, ...cardStyle }}>
           <h2 style={{ marginTop: 0 }}>Book a conversation</h2>
           <p style={{ marginBottom: "1.5rem" }}>
-            Learn how InstantReply AI Agent could fit into your support stack and help your
+            Learn how OfficeVault AI could fit into your support stack and help your
             team respond faster with better context.
           </p>
           <a

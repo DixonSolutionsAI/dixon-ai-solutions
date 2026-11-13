@@ -1,8 +1,8 @@
-# InstantReply sales messaging and evaluation guide
+# OfficeVault AI sales messaging and evaluation guide
 
 ## Positioning
 
-**InstantReply is a draft-first support AI concept designed to help agents prepare context-aware customer replies while keeping people responsible for review and the final response.**
+**OfficeVault AI is a draft-first support AI concept designed to help agents prepare context-aware customer replies while keeping people responsible for review and the final response.**
 
 Lead with the operating model, not an unsupported “best in the world” claim. The defensible distinction is the focus on human-reviewed reply drafting rather than implying universal autonomous resolution. Verify actual product behavior before presenting any capability as available today.
 

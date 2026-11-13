@@ -3,19 +3,19 @@ import AnalyticsEvents from "./analytics-events";
 import BrandHeader from "./brand-header";
 
 export const metadata = {
-  applicationName: "InstantReply AI Agent",
-  title: "InstantReply AI Agent | AI Customer Support Automation",
+  applicationName: "OfficeVault AI",
+  title: "OfficeVault AI | AI Customer Support Automation",
   description:
-    "InstantReply AI Agent helps support teams reduce repetitive reply work with context-aware AI drafts, human review, and multi-channel customer support workflows.",
+    "OfficeVault AI helps support teams reduce repetitive reply work with context-aware AI drafts, human review, and multi-channel customer support workflows.",
   icons: {
     icon: "/icon.svg",
   },
   openGraph: {
-    title: "InstantReply AI Agent",
+    title: "OfficeVault AI",
     description:
       "Context-aware AI agent for customer support teams that drafts replies across email, chat, Slack, and WhatsApp while keeping humans in control.",
     type: "website",
-    siteName: "InstantReply AI Agent",
+    siteName: "OfficeVault AI",
   },
 };
 

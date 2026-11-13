@@ -235,7 +235,7 @@ export default function WorkSpace() {
     >
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
         <p style={{ color: "#7dd3fc", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: "0.8rem", fontWeight: 700 }}>
-          InstantReply · private pilot prototype
+          OfficeVault AI · private pilot prototype
         </p>
         <h1 style={{ fontSize: "2rem", marginBottom: "0.8rem" }}>
           {activePanel === "populate_client_profile" ? "Populate Client Profile" : draftActions.find(({ id }) => id === activePanel)?.label || "Work Space"}

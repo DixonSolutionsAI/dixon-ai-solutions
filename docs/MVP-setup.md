@@ -1,4 +1,4 @@
-# InstantReply private MVP pilot setup
+# OfficeVault AI private MVP pilot setup
 
 The current application is an early, human-reviewed support reply-drafting prototype. It is not connected to a help desk, does not send customer messages, and has not been validated for production customer data.
 
