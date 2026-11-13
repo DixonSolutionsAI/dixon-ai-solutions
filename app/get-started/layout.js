@@ -2,17 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import WorkSpace from "../work-space";
+import { AccessProvider } from "./access-context";
 
 const tabs = [
   { href: "/get-started", label: "Work Space" },
   { href: "/get-started/company-documents", label: "Company Documents" },
+  { href: "/get-started/access", label: "Access" },
 ];
 
 export default function GetStartedLayout({ children }) {
   const pathname = usePathname();
 
   return (
-    <>
+    <AccessProvider>
       <nav
         aria-label="Get Started"
         style={{
@@ -50,7 +53,10 @@ export default function GetStartedLayout({ children }) {
           );
         })}
       </nav>
+      <div hidden={pathname !== "/get-started"}>
+        <WorkSpace />
+      </div>
       {children}
-    </>
+    </AccessProvider>
   );
 }

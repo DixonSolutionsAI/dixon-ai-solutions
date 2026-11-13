@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { getDocuments } from "./browser-documents";
+import { useAccess } from "./get-started/access-context";
 import { createMailtoUrl, readTemplates, saveTemplate, deleteTemplate } from "../lib/response-workflow";
 
 const fieldStyle = {
@@ -30,13 +32,12 @@ const draftActions = [
 ];
 
 export default function WorkSpace() {
-  const [accessCode, setAccessCode] = useState("");
+  const { accessCode } = useAccess();
   const [message, setMessage] = useState("");
   const [reply, setReply] = useState("");
   const [reviewNote, setReviewNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
   const [currentAction, setCurrentAction] = useState("generate");
   const [pendingAction, setPendingAction] = useState("");
   const [accepted, setAccepted] = useState(false);
@@ -80,7 +81,6 @@ export default function WorkSpace() {
     event.preventDefault();
     setLoading(true);
     setError("");
-    setCopied(false);
     setAccepted(false);
 
     try {
@@ -115,7 +115,6 @@ export default function WorkSpace() {
     setLoading(true);
     setPendingAction(action);
     setError("");
-    setCopied(false);
     setAccepted(false);
 
     try {
@@ -144,18 +143,6 @@ export default function WorkSpace() {
     } finally {
       setLoading(false);
       setPendingAction("");
-    }
-  }
-
-  async function copyDraft() {
-    try {
-      const text = activePanel === "email_structure"
-        ? [`To: ${emailTo}`, emailCc && `Cc: ${emailCc}`, `Subject: ${emailSubject}`, "", reply, emailSignature].filter((line) => line !== false).join("\n")
-        : reply;
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-    } catch {
-      setError("Could not access the clipboard. Select and copy the draft manually.");
     }
   }
 
@@ -206,7 +193,6 @@ export default function WorkSpace() {
     setReviewNote("");
     setSuggestion(null);
     setAccepted(false);
-    setCopied(false);
     setApprovalStatus("");
   }
 
@@ -233,25 +219,16 @@ export default function WorkSpace() {
         <p style={{ color: "#7dd3fc", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: "0.8rem", fontWeight: 700 }}>
           InstantReply · private pilot prototype
         </p>
-        <h1 style={{ fontSize: "clamp(2.2rem, 5vw, 3.8rem)", lineHeight: 1.1, marginBottom: "0.8rem" }}>
-          Confidentiality and your information
-        </h1>
-        <p style={{ color: "#cbd5e1", fontSize: "1.05rem", lineHeight: 1.6, maxWidth: "760px" }}>
-          This pilot sends your inquiry, draft, and uploaded documents to OpenAI to generate responses. Uploaded documents stay in this browser, where anyone using it can access them. Confidentiality cannot be guaranteed; use fictional or redacted information only.
-        </p>
-
+        <h1 style={{ fontSize: "2rem", marginBottom: "0.8rem" }}>Work Space</h1>
         <section aria-labelledby="actions-heading" style={{ ...cardStyle, margin: "1.5rem 0" }}>
           <h2 id="actions-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Response actions</h2>
-          <p>Enter your access code and a customer message to generate a response. Review it before using the other actions.</p>
+          <p>Enter your pilot code in <Link href="/get-started/access" style={{ color: "#7dd3fc" }}>Access</Link> and a customer message to generate a response. Review it before using the other actions.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
             {draftActions.map(({ id, label }) => (
-              <button key={id} type="button" onClick={() => { setActivePanel(id); setCopied(false); setAccepted(false); }} disabled={loading} aria-pressed={activePanel === id} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
+              <button key={id} type="button" onClick={() => { setActivePanel(id); setAccepted(false); }} disabled={loading} aria-pressed={activePanel === id} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
                 {label}
               </button>
             ))}
-            <button type="button" onClick={copyDraft} disabled={loading || !reply.trim()} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700 }}>
-              {copied ? "Copied" : "Copy draft"}
-            </button>
           </div>
           <p style={{ color: "#cbd5e1", marginBottom: 0 }}>Choose an action to open its editor.</p>
         </section>
@@ -261,20 +238,6 @@ export default function WorkSpace() {
         </aside>
 
         <form id="draft-form" onSubmit={handleSubmit} style={{ display: "grid", gap: "1.1rem" }}>
-          <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
-            Pilot access code
-            <input
-              type="password"
-              value={accessCode}
-              onChange={(event) => setAccessCode(event.target.value)}
-              autoComplete="current-password"
-              required
-              maxLength={256}
-              style={fieldStyle}
-              placeholder="Provided by the pilot owner"
-            />
-          </label>
-
           <div style={{ display: "grid", gap: "0.5rem" }}>
             <label htmlFor="customer-message" style={{ fontWeight: 700 }}>
               Customer message <span style={{ color: "#94a3b8", fontWeight: 400 }}>Required · max 5,000 characters</span>
@@ -308,7 +271,7 @@ export default function WorkSpace() {
           </div>
           <p>A future Supabase integration will require individual sign-in and company-level access controls. Creating a database alone will not connect it.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-            <button type="button" onClick={() => { profileDialogRef.current.close(); setActivePanel("populate_client_profile"); setCopied(false); setAccepted(false); panelRef.current?.focus(); }} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Draft profile summary</button>
+            <button type="button" onClick={() => { profileDialogRef.current.close(); setActivePanel("populate_client_profile"); setAccepted(false); panelRef.current?.focus(); }} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Draft profile summary</button>
             <button type="button" autoFocus onClick={() => profileDialogRef.current.close()} style={{ ...fieldStyle, width: "auto", cursor: "pointer", fontWeight: 700 }}>Close</button>
           </div>
           <p>Drafting creates an editable summary from the inquiry; it does not open or save a customer record.</p>
@@ -334,15 +297,15 @@ export default function WorkSpace() {
               <div style={{ display: "grid", gap: "1rem", marginBottom: "1rem" }}>
                 <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
                   To
-                  <input type="email" value={emailTo} onChange={(event) => { setEmailTo(event.target.value); setCopied(false); setAccepted(false); }} style={fieldStyle} />
+                  <input type="email" value={emailTo} onChange={(event) => { setEmailTo(event.target.value); setAccepted(false); }} style={fieldStyle} />
                 </label>
                 <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
                   Cc
-                  <input type="text" value={emailCc} onChange={(event) => { setEmailCc(event.target.value); setCopied(false); setAccepted(false); }} placeholder="Email addresses, separated by commas" style={fieldStyle} />
+                  <input type="text" value={emailCc} onChange={(event) => { setEmailCc(event.target.value); setAccepted(false); }} placeholder="Email addresses, separated by commas" style={fieldStyle} />
                 </label>
                 <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
                   Subject
-                  <input type="text" value={emailSubject} onChange={(event) => { setEmailSubject(event.target.value); setCopied(false); setAccepted(false); }} style={fieldStyle} />
+                  <input type="text" value={emailSubject} onChange={(event) => { setEmailSubject(event.target.value); setAccepted(false); }} style={fieldStyle} />
                 </label>
               </div>
             ) : null}
@@ -366,7 +329,6 @@ export default function WorkSpace() {
                 onChange={(event) => {
                   setReply(event.target.value);
                   setAccepted(false);
-                  setCopied(false);
                 }}
                 rows={7}
                 style={fieldStyle}
@@ -388,7 +350,7 @@ export default function WorkSpace() {
                 <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", font: "inherit" }}>{suggestion.reply}</pre>
                 {suggestion.reviewNote ? <p><strong>Agent review check:</strong> {suggestion.reviewNote}</p> : null}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-                  <button type="button" disabled={loading} onClick={() => { setReply(suggestion.reply); setReviewNote(suggestion.reviewNote); setSuggestion(null); setHasDraft(true); setCurrentAction("generate"); setAccepted(false); setCopied(false); }} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>Use new suggestion</button>
+                  <button type="button" disabled={loading} onClick={() => { setReply(suggestion.reply); setReviewNote(suggestion.reviewNote); setSuggestion(null); setHasDraft(true); setCurrentAction("generate"); setAccepted(false); }} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>Use new suggestion</button>
                   <button type="button" disabled={loading} onClick={() => setSuggestion(null)} style={{ ...fieldStyle, width: "auto", fontWeight: 700 }}>Keep current draft</button>
                 </div>
               </div>
@@ -397,7 +359,7 @@ export default function WorkSpace() {
               <div style={{ display: "grid", gap: "0.75rem", marginTop: "1rem" }}>
                 <label style={{ display: "grid", gap: "0.5rem", fontWeight: 700 }}>
                   Signature
-                  <textarea value={emailSignature} onChange={(event) => { setEmailSignature(event.target.value); setCopied(false); setAccepted(false); }} rows={3} style={fieldStyle} />
+                  <textarea value={emailSignature} onChange={(event) => { setEmailSignature(event.target.value); setAccepted(false); }} rows={3} style={fieldStyle} />
                 </label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
                   <button type="button" disabled style={{ ...fieldStyle, width: "auto" }}>Connect Gmail</button>
@@ -455,24 +417,24 @@ export default function WorkSpace() {
             {activePanel === "email_structure" ? (
               <div style={{ display: "grid", gap: "0.75rem" }}>
                 <label style={{ display: "grid", gap: "0.5rem" }}>To
-                  <input type="email" multiple value={emailTo} onChange={(event) => { setEmailTo(event.target.value); setAccepted(false); setCopied(false); }} style={fieldStyle} />
+                  <input type="email" multiple value={emailTo} onChange={(event) => { setEmailTo(event.target.value); setAccepted(false); }} style={fieldStyle} />
                 </label>
                 <label style={{ display: "grid", gap: "0.5rem" }}>Cc
-                  <input type="email" multiple value={emailCc} onChange={(event) => { setEmailCc(event.target.value); setAccepted(false); setCopied(false); }} style={fieldStyle} />
+                  <input type="email" multiple value={emailCc} onChange={(event) => { setEmailCc(event.target.value); setAccepted(false); }} style={fieldStyle} />
                 </label>
                 <label style={{ display: "grid", gap: "0.5rem" }}>Subject
-                  <input value={emailSubject} onChange={(event) => { setEmailSubject(event.target.value); setAccepted(false); setCopied(false); }} style={fieldStyle} />
+                  <input value={emailSubject} onChange={(event) => { setEmailSubject(event.target.value); setAccepted(false); }} style={fieldStyle} />
                 </label>
               </div>
             ) : null}
             <label style={{ display: "grid", gap: "0.5rem", marginTop: "0.75rem" }}>
               {activePanel === "email_structure" ? "Email body" : "Response"}
-              <textarea value={reply} onChange={(event) => { setReply(event.target.value); setAccepted(false); setCopied(false); }} rows={7} style={fieldStyle} />
+              <textarea value={reply} onChange={(event) => { setReply(event.target.value); setAccepted(false); }} rows={7} style={fieldStyle} />
             </label>
             {activePanel === "email_structure" ? (
               <>
                 <label style={{ display: "grid", gap: "0.5rem", marginTop: "0.75rem" }}>Signature
-                  <textarea value={emailSignature} onChange={(event) => { setEmailSignature(event.target.value); setAccepted(false); setCopied(false); }} rows={3} style={fieldStyle} />
+                  <textarea value={emailSignature} onChange={(event) => { setEmailSignature(event.target.value); setAccepted(false); }} rows={3} style={fieldStyle} />
                 </label>
                 <p>Email-app availability and draft length depend on your device. Check all fields in the email app before sending.</p>
               </>

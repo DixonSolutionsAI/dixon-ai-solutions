@@ -12,6 +12,8 @@ In the Vercel project, add these environment variables for the Preview environme
 
 Redeploy the Preview deployment after setting variables. Do not enable the AI key on a public Production deployment until access controls, usage limits, privacy practices, and provider billing limits have been reviewed. The shared pilot code is only an interim gate and can be shared or misused; rotate it if exposed.
 
+Enter the pilot code in Get Started > Access, then return to Work Space to draft responses. The code and the current workspace draft are kept in memory while switching between Get Started tabs; reloading or leaving this area clears them. The code is not validated until a draft request is submitted.
+
 ## Policy and guidelines in this browser
 
 Use the Company Documents navigation tab to upload one policy and one guidelines file as non-empty UTF-8 `.txt` or text-based `.pdf` files. Text, including text extracted from PDFs, must be at most 16,000 bytes per document; PDFs must also be at most 10 MB. Scanned PDFs need OCR before uploading. PDF text is extracted locally in the browser; formatting and images are not retained. Uploading replaces the corresponding document, and download retrieves its stored text as a `.txt` file, not the original PDF. No Google Drive setup or owner password is required.
