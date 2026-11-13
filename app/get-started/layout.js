@@ -7,10 +7,10 @@ import { AccessProvider } from "./access-context";
 import { StaffProvider, useStaff } from "./staff-context";
 
 const tabs = [
-  { href: "/get-started", label: "Work Space" },
-  { href: "/get-started/company-documents", label: "Company Documents" },
-  { href: "/get-started/access", label: "Access" },
   { href: "/get-started/employee", label: "Employee Sign in" },
+  { href: "/get-started", label: "Work Space" },
+  { href: "/get-started/access", label: "Access" },
+  { href: "/get-started/company-documents", label: "Company Documents" },
 ];
 
 function PersistentWorkSpace({ hidden }) {

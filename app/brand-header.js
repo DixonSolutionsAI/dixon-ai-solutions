@@ -1,9 +1,9 @@
 const links = [
-  { href: "/get-started", label: "All-in-One" },
   { href: "/about", label: "About" },
   { href: "/services", label: "Services" },
   { href: "/demo", label: "Demo" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/get-started", label: "All-in-One" },
 ];
 
 export default function BrandHeader() {
