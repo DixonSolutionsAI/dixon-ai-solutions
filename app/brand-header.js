@@ -63,6 +63,12 @@ export default function BrandHeader() {
               {link.label}
             </a>
           ))}
+          <a
+            href="/workspace"
+            style={{ color: "#082f49", background: "#7dd3fc", borderRadius: "999px", padding: "0.5rem 0.9rem", textDecoration: "none", fontSize: "0.95rem", fontWeight: 700 }}
+          >
+            Connections & workspace
+          </a>
         </nav>
       </div>
     </header>
