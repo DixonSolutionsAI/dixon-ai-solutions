@@ -228,17 +228,17 @@ export default function WorkSpace() {
           {activePanel === "populate_client_profile" ? "Populate Client Profile" : draftActions.find(({ id }) => id === activePanel)?.label || "Work Space"}
         </h1>
         {activePanel ? <Link href="/get-started" style={{ color: "#7dd3fc" }}>← Back to Work Space</Link> : null}
-        <section aria-labelledby="actions-heading" style={{ ...cardStyle, margin: "1.5rem 0" }}>
+        {!activePanel ? <section aria-labelledby="actions-heading" style={{ ...cardStyle, margin: "1.5rem 0" }}>
           <h2 id="actions-heading" style={{ color: "#7dd3fc", marginTop: 0 }}>Response actions</h2>
           <p>Choose an action to open its workspace. Enter your pilot code in <Link href="/get-started/access" style={{ color: "#7dd3fc" }}>Access</Link> before generating a response.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
             {draftActions.map(({ id, label, path }) => (
-              <Link key={id} href={`/get-started/work-space/${path}`} onClick={(event) => { if (loading) event.preventDefault(); }} aria-current={activePanel === id ? "page" : undefined} aria-disabled={loading || undefined} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700, textDecoration: "none", borderColor: activePanel === id ? "#7dd3fc" : "#334155" }}>
+              <Link key={id} href={`/get-started/work-space/${path}`} onClick={(event) => { if (loading) event.preventDefault(); }} aria-disabled={loading || undefined} style={{ ...fieldStyle, width: "auto", cursor: loading ? "wait" : "pointer", fontWeight: 700, textDecoration: "none" }}>
                 {label}
               </Link>
             ))}
           </div>
-        </section>
+        </section> : null}
 
         {activePanel ? (
         <>
