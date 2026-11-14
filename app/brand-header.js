@@ -3,6 +3,7 @@ const links = [
   { href: "/services", label: "Services" },
   { href: "/demo", label: "Demo" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/landing-page#billing", label: "Billing/Subscription" },
   { href: "/get-started", label: "All-in-One" },
 ];
 
