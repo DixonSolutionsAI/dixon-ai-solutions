@@ -1,4 +1,4 @@
-import { subscriptionPlans } from "./subscription-plans";
+import SubscriptionPreview from "./subscription-preview";
 
 const card = {
   background: "#0f172a",
@@ -130,54 +130,7 @@ export default function PricingPage() {
           to smaller teams. Subscriptions are not available for purchase yet.
         </p>
 
-        <section
-          aria-label="OfficeVault AI plans"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "1rem",
-            marginTop: "2rem",
-          }}
-        >
-          {subscriptionPlans.map((plan) => (
-            <article key={plan.name} style={card}>
-              <h3 style={{ color: "#7dd3fc", marginTop: 0 }}>{plan.name}</h3>
-              <p style={{ fontSize: "2rem", fontWeight: 700, margin: "0.5rem 0" }}>
-                {plan.price}
-                <span style={{ fontSize: "1rem", fontWeight: 400 }}> / company / month</span>
-              </p>
-              <p style={{ color: "#dfe7f5" }}>{plan.audience}</p>
-              <a
-                href="#demo"
-                style={{
-                  display: "inline-block",
-                  background: "#38bdf8",
-                  color: "#082f49",
-                  padding: "0.7rem 1rem",
-                  borderRadius: "999px",
-                  fontWeight: 700,
-                  textDecoration: "none",
-                }}
-              >
-                Discuss this plan
-              </a>
-            </article>
-          ))}
-        </section>
-
-        <p
-          role="note"
-          style={{
-            ...card,
-            marginTop: "1rem",
-            borderColor: "#854d0e",
-            color: "#fde68a",
-          }}
-        >
-          Subscriptions are not available yet. Seat limits, included usage, channel availability,
-          integrations, and final plan features still need to be confirmed.
-          Third-party service fees, taxes, and usage charges may apply.
-        </p>
+        <SubscriptionPreview />
 
         <section style={{ marginTop: "3.5rem" }} aria-labelledby="stack-heading">
           <h3 id="stack-heading">Common software costs for a small business</h3>
