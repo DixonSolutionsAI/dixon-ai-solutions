@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useAccess } from "../access-context";
 import { useStaff } from "../staff-context";
-import { KIND_LABELS, buildSessions, dateKey, formatDuration, needsApproval, periodBounds, reviewTimesheet, summarizeDay, workedInPeriod } from "../../../lib/staff";
+import { KIND_LABELS, buildSessions, dateKey, formatDuration, needsApproval, periodBounds, reviewTimesheet, summarizeDay, validateEmployee, workedInPeriod } from "../../../lib/staff";
+import { deleteStaffDocuments, getStaffDocument, saveStaffDocuments } from "../../staff-document-storage.mjs";
 
 const card = { maxWidth: "900px", margin: "0 auto 1rem", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "16px", padding: "1.25rem" };
 const field = { width: "100%", borderRadius: "12px", border: "1px solid #334155", background: "#020617", color: "white", padding: "0.8rem 1rem", fontSize: "1rem", boxSizing: "border-box" };
@@ -60,11 +61,26 @@ function EmployeeHire() {
   const [notice, setNotice] = useState("");
   const update = (key) => (event) => setForm({ ...form, [key]: event.target.value });
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
     const formElement = event.target;
+    let uploaded = false;
     try {
-      hire({ ...form, contact, documents });
+      validateEmployee({ ...form, contact }, employees);
+      const savedDocuments = await saveStaffDocuments(form.employeeId, documents);
+      uploaded = savedDocuments.length > 0;
+      try {
+        hire({ ...form, contact, documents: savedDocuments });
+      } catch (err) {
+        if (uploaded) {
+          try {
+            await deleteStaffDocuments(form.employeeId);
+          } catch {
+            throw new Error(`${err.message} Uploaded files could not be cleaned up; remove them from this browser's site data.`);
+          }
+        }
+        throw err;
+      }
       setNotice(`${form.name} added. They can now set a password on the Employee tab.`);
       setError("");
       setForm(emptyHire);
@@ -89,10 +105,12 @@ function EmployeeHire() {
         <label style={label}>Employee ID<input style={field} value={form.employeeId} onChange={update("employeeId")} required /></label>
         <label style={label}>Hours (per week)<input style={field} type="number" min="1" max="168" value={form.hours} onChange={update("hours")} required /></label>
         <label style={label}>Onboarding documents
-          <input style={field} type="file" multiple onChange={(event) => setDocuments([...event.target.files].map(({ name, size }) => ({ name, size })))} />
+          <input style={field} type="file" multiple onChange={(event) => setDocuments([...event.target.files])} />
         </label>
-        <p style={{ margin: 0 }}>Only file names are recorded for now. Files are not stored until a Staff Vault is connected.</p>
-        <label style={label}>Username<input style={field} value={form.username} onChange={update("username")} autoComplete="off" required /></label>
+        <p style={{ margin: 0 }}>Select multiple documents at once (up to 10 MB per file). Complete files are stored in this browser and shown under the employee after hiring; they are not shared across devices.</p>
+        {documents.length ? <ul aria-label="Selected onboarding documents">{documents.map((document) => <li key={`${document.name}-${document.size}`}>{document.name} · {(document.size / 1024).toFixed(1)} KB</li>)}</ul> : null}
+        <label style={label}>Username<input style={field} value={form.username} onChange={update("username")} autoComplete="off" maxLength={32} aria-describedby="username-requirements" required /></label>
+        <p id="username-requirements" style={{ margin: 0 }}>Use 2–32 characters with at least 2 letters, at least 1 number and exactly 1 underscore. Spaces, dots and hyphens are not allowed.</p>
         {error ? <p role="alert" style={{ color: "#fca5a5", margin: 0 }}>{error}</p> : null}
         {notice ? <p role="status" style={{ color: "#86efac", margin: 0 }}>{notice}</p> : null}
         <button type="submit" style={{ ...button, justifySelf: "start" }}>Hire employee</button>
@@ -113,8 +131,34 @@ function EmployeeHire() {
         <ul style={{ paddingLeft: "1.25rem" }}>
           {employees.map((employee) => (
             <li key={employee.employeeId} style={{ marginBottom: "0.5rem" }}>
-              {employee.name} · ID {employee.employeeId} · {employee.username} · {employee.hours} h/wk · hired {employee.hireDate} · {employee.passwordHash ? "password set" : "awaiting password"}{" "}
-              <button type="button" onClick={() => removeEmployee(employee.employeeId)} style={{ ...button, padding: "0.2rem 0.6rem", fontSize: "0.85rem" }}>Remove</button>
+              <div>{employee.name} · ID {employee.employeeId} · {employee.username} · {employee.hours} h/wk · hired {employee.hireDate} · {employee.passwordHash ? "password set" : "awaiting password"}</div>
+              {employee.documents?.length ? <ul aria-label={`${employee.name} onboarding documents`}>{employee.documents.map((document) => (
+                <li key={document.id}>{document.name} · {(document.size / 1024).toFixed(1)} KB{" "}
+                  <button type="button" onClick={async () => {
+                    try {
+                      const saved = await getStaffDocument(document.id);
+                      if (!saved) throw new Error("This document is missing from this browser's storage.");
+                      const url = URL.createObjectURL(saved.file);
+                      const link = window.document.createElement("a");
+                      link.href = url;
+                      link.download = saved.name;
+                      link.click();
+                      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    } catch (err) {
+                      setError(err.message);
+                    }
+                  }} style={{ ...button, padding: "0.2rem 0.6rem", fontSize: "0.85rem" }}>Download</button>
+                </li>
+              ))}</ul> : null}
+              <button type="button" onClick={async () => {
+                try {
+                  if (employee.documents?.length) await deleteStaffDocuments(employee.employeeId);
+                  removeEmployee(employee.employeeId);
+                  setError("");
+                } catch (err) {
+                  setError(err.message);
+                }
+              }} style={{ ...button, padding: "0.2rem 0.6rem", fontSize: "0.85rem" }}>Remove</button>
             </li>
           ))}
         </ul>

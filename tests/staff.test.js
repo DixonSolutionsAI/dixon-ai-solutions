@@ -21,10 +21,18 @@ test("only allows valid clock transitions", () => {
 });
 
 test("rejects duplicate employee IDs and usernames", () => {
-  const base = { name: "Ann", hireDate: "2026-01-05", employeeId: "A1", username: "ann", hours: 40 };
+  const base = { name: "Ann", hireDate: "2026-01-05", employeeId: "A1", username: "ann1_a", hours: 40 };
   const existing = [validateEmployee(base, [])];
-  assert.throws(() => validateEmployee({ ...base, username: "bob" }, existing), /Employee ID/);
+  assert.throws(() => validateEmployee({ ...base, username: "bob2_b" }, existing), /Employee ID/);
   assert.throws(() => validateEmployee({ ...base, employeeId: "B2" }, existing), /username/);
+});
+
+test("validates the new username character, letter, digit and underscore rules", () => {
+  const base = { name: "Fran", hireDate: "2026-01-05", employeeId: "F1", username: "FranTest2_DixonAISolutions", hours: 40 };
+  assert.equal(validateEmployee(base, []).username, "FranTest2_DixonAISolutions");
+  for (const username of ["a1_", "ab_cd", "ab1__c", "ab1.c", "ab1-c", "ab 1_c", "ab1_" + "c".repeat(29)]) {
+    assert.throws(() => validateEmployee({ ...base, username }, []), /Username must/);
+  }
 });
 
 test("supports separate break, cue and meeting transitions and counts work categories", () => {
