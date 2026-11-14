@@ -130,7 +130,7 @@ export default function PricingPage() {
           to smaller teams. Subscriptions are not available for purchase yet.
         </p>
 
-        <SubscriptionPreview />
+        <SubscriptionPreview providers={comparison.map(({ vendor }) => vendor)} />
 
         <section style={{ marginTop: "3.5rem" }} aria-labelledby="stack-heading">
           <h3 id="stack-heading">Common software costs for a small business</h3>

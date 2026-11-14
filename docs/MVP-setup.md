@@ -16,7 +16,7 @@ An administrator enters the pilot code once in Get Started > Access. The server 
 
 ## Billing preview
 
-The Billing/Subscription tab next to Pricing opens the billing section within Pricing, which previews the Solo ($19), Team ($49), and Business ($99) monthly prices per company and the planned billing setup. Plan selection is only a visual preview: company account registration, Stripe checkout, payment methods, subscription management, and subscription-based access are not implemented. No payment is collected. Seat limits and included usage remain to be determined.
+The Billing/Subscription tab next to Pricing opens the billing section within Pricing, which previews the Solo ($19), Team ($49), and Business ($99) monthly prices per company and the planned billing setup. Company plan and outside provider selections are previews only and are cleared on reload; third-party plans and fees are separate. Company account registration, Stripe checkout, payment methods, provider connections, subscription management, and subscription-based access are not implemented. No payment is collected. Seat limits and included usage remain to be determined.
 
 ## Employees and time clock
 

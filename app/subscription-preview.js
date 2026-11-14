@@ -10,9 +10,16 @@ const card = {
   padding: "1.5rem",
 };
 
-export default function SubscriptionPreview() {
+export default function SubscriptionPreview({ providers }) {
   const [selected, setSelected] = useState(null);
+  const [selectedProviders, setSelectedProviders] = useState([]);
   const plan = subscriptionPlans.find((item) => item.name === selected);
+
+  function toggleProvider(provider) {
+    setSelectedProviders((current) => current.includes(provider)
+      ? current.filter((item) => item !== provider)
+      : [...current, provider]);
+  }
 
   return (
     <section id="billing" aria-labelledby="plans-heading" style={{ marginTop: "2rem" }}>
@@ -49,8 +56,25 @@ export default function SubscriptionPreview() {
           <li>Choose a monthly plan for your company.</li>
           <li>Complete secure checkout when payments are connected. Agent access will require an active subscription.</li>
         </ol>
-        <p>Planned payment options include cards and supported digital wallets, such as Apple Pay and Google Pay. Availability will depend on the payment provider and device.</p>
+        <p>Planned payment options include Visa, Mastercard and debit cards. Availability will depend on the payment provider and device.</p>
+        <fieldset style={{ border: "1px solid #334155", borderRadius: "12px", padding: "1rem" }}>
+          <legend>Preview outside providers</legend>
+          <p id="provider-preview-help" style={{ color: "#cbd5e1", marginTop: 0 }}>
+            Select the services your company may want to use, such as Microsoft 365, QuickBooks, or
+            Zoom Workplace. This is a preview only: selections are not saved, purchased, or connected.
+            Provider connections are not available yet, and third-party plans and fees are separate.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "0.75rem" }}>
+            {providers.map((provider) => (
+              <label key={provider} style={{ display: "flex", gap: "0.5rem", alignItems: "start" }}>
+                <input type="checkbox" checked={selectedProviders.includes(provider)} onChange={() => toggleProvider(provider)} aria-describedby="provider-preview-help" />
+                {provider}
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <p role="status">{plan ? `Preview selection: ${plan.name} at ${plan.price} per company per month.` : "Select a plan to preview your subscription."}</p>
+        <p role="status">{selectedProviders.length ? `Outside providers selected for preview: ${selectedProviders.join(", ")}.` : "No outside providers selected."}</p>
         <button type="button" disabled style={{ background: "#334155", color: "#cbd5e1", border: 0, padding: "0.8rem 1.25rem", borderRadius: "999px", fontWeight: 700, cursor: "not-allowed" }}>Pay now</button>
         <p style={{ color: "#cbd5e1", marginBottom: 0 }}>Pay now will be available after account registration and Stripe checkout are configured.</p>
       </section>
