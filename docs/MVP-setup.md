@@ -14,6 +14,10 @@ Redeploy the Preview deployment after setting variables. Do not enable the AI ke
 
 An administrator enters the pilot code once in Get Started > Access. The server validates it and stores a 12-hour httpOnly session cookie, so employees never see or type the code. The current workspace draft is kept in memory while switching tabs; reloading clears it.
 
+## Billing preview
+
+The Billing tab previews the Solo ($19), Team ($49), and Business ($99) monthly prices per company. Plan selection is only a visual preview: company account registration, Stripe checkout, payment methods, subscription management, and subscription-based access are not implemented. No payment is collected. Seat limits and included usage remain to be determined.
+
 ## Employees and time clock
 
 - Get Started opens on the **Employee** tab. Work Space is locked until an employee signs in (username + Company ID + password) and is clocked in. Starting lunch or a break locks it again until they end it.

@@ -1,27 +1,11 @@
+import { subscriptionPlans } from "./subscription-plans";
+
 const card = {
   background: "#0f172a",
   border: "1px solid #1e293b",
   borderRadius: "18px",
   padding: "1.5rem",
 };
-
-const proposedPlans = [
-  {
-    name: "Solo",
-    price: "$19",
-    audience: "For an individual operator evaluating an AI-assisted support workflow.",
-  },
-  {
-    name: "Team",
-    price: "$49",
-    audience: "For a small team coordinating customer-support drafts.",
-  },
-  {
-    name: "Business",
-    price: "$99",
-    audience: "For a growing business with broader support needs.",
-  },
-];
 
 const comparison = [
   {
@@ -138,16 +122,16 @@ export default function PricingPage() {
           id="pricing-heading"
           style={{ fontSize: "clamp(2.2rem, 4vw, 3.5rem)", lineHeight: 1.1 }}
         >
-          One focused workflow. Clear proposed rates.
+          One focused workflow. Clear monthly rates.
         </h2>
         <p style={{ color: "#dfe7f5", maxWidth: "820px" }}>
           OfficeVault AI is designed around policy-aware support drafts with a human in control.
-          The proposed monthly prices below are intended to make that workflow accessible to
-          smaller teams.
+          The monthly prices below are per company and intended to make that workflow accessible
+          to smaller teams. Subscriptions are not available for purchase yet.
         </p>
 
         <section
-          aria-label="Proposed OfficeVault AI plans"
+          aria-label="OfficeVault AI plans"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
@@ -155,12 +139,12 @@ export default function PricingPage() {
             marginTop: "2rem",
           }}
         >
-          {proposedPlans.map((plan) => (
+          {subscriptionPlans.map((plan) => (
             <article key={plan.name} style={card}>
               <h3 style={{ color: "#7dd3fc", marginTop: 0 }}>{plan.name}</h3>
               <p style={{ fontSize: "2rem", fontWeight: 700, margin: "0.5rem 0" }}>
                 {plan.price}
-                <span style={{ fontSize: "1rem", fontWeight: 400 }}> / month</span>
+                <span style={{ fontSize: "1rem", fontWeight: 400 }}> / company / month</span>
               </p>
               <p style={{ color: "#dfe7f5" }}>{plan.audience}</p>
               <a
@@ -190,9 +174,8 @@ export default function PricingPage() {
             color: "#fde68a",
           }}
         >
-          These are proposed launch prices. Billing unit (per business or per user), seat limits,
-          included usage, channel availability, integrations, and final plan features still need to
-          be confirmed.
+          Subscriptions are not available yet. Seat limits, included usage, channel availability,
+          integrations, and final plan features still need to be confirmed.
           Third-party service fees, taxes, and usage charges may apply.
         </p>
 
