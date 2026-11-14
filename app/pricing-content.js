@@ -140,11 +140,15 @@ export default function PricingPage() {
             OfficeVault AI is not a replacement for accounting, payroll, productivity, payments,
             ecommerce, or every customer-support platform.
           </p>
+          <p id="connections-preview" role="note" style={{ color: "#fde68a" }}>
+            Connection controls are placeholders only. None of these services can be connected to
+            the agent yet; no account information or data is shared.
+          </p>
           <div style={{ overflowX: "auto", marginTop: "1.25rem" }}>
             <table
               style={{
                 width: "100%",
-                minWidth: "780px",
+                minWidth: "950px",
                 borderCollapse: "collapse",
                 background: "#0f172a",
                 border: "1px solid #1e293b",
@@ -162,7 +166,7 @@ export default function PricingPage() {
               </caption>
               <thead>
                 <tr>
-                  {["Category", "Example plan", "Starting price", "Notes"].map((heading) => (
+                  {["Category", "Example plan", "Starting price", "Notes", "Agent connection"].map((heading) => (
                     <th
                       key={heading}
                       scope="col"
@@ -206,6 +210,18 @@ export default function PricingPage() {
                     </td>
                     <td style={{ padding: "0.8rem", borderBottom: "1px solid #1e293b" }}>
                       {item.details}
+                    </td>
+                    <td style={{ padding: "0.8rem", borderBottom: "1px solid #1e293b" }}>
+                      <button
+                        type="button"
+                        disabled
+                        aria-label={`Connect ${item.vendor} to OfficeVault AI`}
+                        aria-describedby="connections-preview"
+                        style={{ background: "#334155", color: "#cbd5e1", border: 0, borderRadius: "8px", padding: "0.6rem 0.8rem", cursor: "not-allowed", whiteSpace: "nowrap" }}
+                      >
+                        Connect
+                      </button>
+                      <div style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Not available</div>
                     </td>
                   </tr>
                 ))}

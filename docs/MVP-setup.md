@@ -43,6 +43,8 @@ The Company Documents tab includes a Project Office Templates section for upload
 
 ## Planned connections
 
+The Pricing comparison lists disabled connection placeholders for each example service. These do not connect accounts or share data with the agent.
+
 The email editor provides To, Cc, Subject, body, and signature fields. Accepting an email opens a prefilled draft using the device's default email app; the user must review and send it there. Email-app availability and draft length depend on the device. Direct Gmail and Outlook connection and sending are not implemented; their buttons are disabled. The customer message's profile dialog offers a disabled database connection and search and can open the profile-summary drafting action, but cannot search, open, or store a customer record. Supabase sign-in, company workspace isolation, shared profile storage, and a setup assistant are not implemented. Do not enter real customer information in this prototype.
 
 Accepting a text or call response saves it as a named template in browser site storage, not a shared database. Templates are selected manually, not automatically matched to inquiries. Anyone using this browser can read them and clearing site data removes them. Never save sensitive information in templates.
