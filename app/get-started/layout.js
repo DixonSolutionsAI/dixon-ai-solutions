@@ -9,6 +9,7 @@ import { StaffProvider, useStaff } from "./staff-context";
 const tabs = [
   { href: "/get-started/employee", label: "Employee Sign in" },
   { href: "/get-started", label: "Work Space" },
+  { href: "/get-started/staff-messages", label: "Staff Messages" },
   { href: "/get-started/access", label: "Access" },
   { href: "/get-started/company-documents", label: "Company Documents" },
 ];
