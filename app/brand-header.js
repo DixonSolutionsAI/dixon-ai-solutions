@@ -1,3 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+
 const links = [
   { href: "/about", label: "About" },
   { href: "/services", label: "Services" },
@@ -8,6 +13,22 @@ const links = [
 ];
 
 export default function BrandHeader() {
+  const pathname = usePathname();
+  const [hash, setHash] = useState("");
+
+  useEffect(() => {
+    const syncHash = () => setHash(window.location.hash);
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    return () => window.removeEventListener("hashchange", syncHash);
+  }, []);
+
+  useEffect(() => {
+    setHash(window.location.hash);
+  }, [pathname]);
+
+  const homeActive = pathname === "/" || (pathname === "/landing-page" && hash !== "#billing");
+
   return (
     <header
       style={{
@@ -31,11 +52,16 @@ export default function BrandHeader() {
         <a
           href="/"
           aria-label="OfficeVault AI home"
+          aria-current={homeActive ? "page" : undefined}
           style={{
             display: "inline-flex",
             alignItems: "center",
             gap: "0.7rem",
-            color: "white",
+            padding: "0.5rem 0.75rem",
+            border: `1px solid ${homeActive ? "#fff" : "transparent"}`,
+            borderRadius: "10px",
+            background: homeActive ? "#7dd3fc" : "transparent",
+            color: homeActive ? "#0f172a" : "white",
             textDecoration: "none",
             fontWeight: 700,
             fontSize: "1.05rem",
@@ -56,15 +82,32 @@ export default function BrandHeader() {
           aria-label="Main navigation"
           style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap" }}
         >
-          {links.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              style={{ color: "#dfe7f5", textDecoration: "none", fontSize: "0.95rem" }}
-            >
-              {link.label}
-            </a>
-          ))}
+          {links.map((link) => {
+            const isActive = link.href === "/landing-page#billing"
+              ? pathname === "/billing" || (pathname === "/landing-page" && hash === "#billing")
+              : pathname === link.href || pathname.startsWith(`${link.href}/`);
+            return (
+              <a
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? "page" : undefined}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "0.5rem 0.75rem",
+                  border: `1px solid ${isActive ? "#fff" : "transparent"}`,
+                  borderRadius: "10px",
+                  background: isActive ? "#7dd3fc" : "transparent",
+                  color: isActive ? "#0f172a" : "#dfe7f5",
+                  textDecoration: "none",
+                  fontSize: "0.95rem",
+                  fontWeight: isActive ? 700 : 500,
+                }}
+              >
+                {link.label}
+              </a>
+            );
+          })}
         </nav>
       </div>
     </header>
